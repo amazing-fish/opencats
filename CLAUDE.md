@@ -8,9 +8,14 @@
 
 ```
 前端 (Vite + React + Tailwind)  ←→  bridge/server.js (Express :4891)  ←→  Redis / codex.exe / Anthropic API
+                                         └── gateway.js (统一 provider 路由)
+                                               ├── providers/claude.js
+                                               └── providers/codex.js
 ```
 
 - 前端不直连任何 AI API，全部经由 bridge 中转
+- 前端只调用 `src/agents/gatewayAgent.js`，不含任何 provider-specific 逻辑
+- bridge `POST /gateway/stream` 是唯一 AI 请求入口，provider 差异收敛在 `bridge/providers/`
 - `useChatStore` 是唯一状态源，无 Zustand/Redux
 - Redis key: `cat-cafe:conversations`，存全量会话 JSON
 

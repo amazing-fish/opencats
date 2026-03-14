@@ -4,6 +4,7 @@ import { spawn } from 'child_process'
 import { existsSync } from 'fs'
 import Redis from 'ioredis'
 import Anthropic from '@anthropic-ai/sdk'
+import { registerGateway } from './gateway.js'
 
 const app = express()
 app.use(cors())
@@ -207,6 +208,8 @@ app.post('/codex/stream', (req, res) => {
     if (!child.killed) child.kill()
   })
 })
+
+registerGateway(app)
 
 app.listen(4891, () => {
   console.log('[bridge] Codex bridge running on http://localhost:4891')
