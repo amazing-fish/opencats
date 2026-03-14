@@ -15,21 +15,19 @@ export const CLAUDE_MODELS = {
  * 发送消息到 Claude（经由 bridge），流式返回
  * @param {Array} messages - [{role, content}]
  * @param {string} model
- * @param {string} baseUrl - 可选，bridge 侧会使用
  * @param {string} systemPrompt
  * @param {function} onChunk - (text) => void
  * @param {function} onDone - (fullText, usage) => void
  * @param {function} onError - (err) => void
  * @returns {AbortController}
  */
-export function streamClaudeCode({ messages, model = CLAUDE_MODELS.sonnet, baseUrl, systemPrompt, onChunk, onDone, onError }) {
+export function streamClaudeCode({ messages, model = CLAUDE_MODELS.sonnet, systemPrompt, onChunk, onDone, onError }) {
   const controller = new AbortController()
 
   const run = async () => {
     try {
       const body = { messages, model }
       if (systemPrompt) body.systemPrompt = systemPrompt
-      if (baseUrl) body.baseUrl = baseUrl
 
       const res = await fetch(`${BRIDGE}/claude/stream`, {
         method: 'POST',

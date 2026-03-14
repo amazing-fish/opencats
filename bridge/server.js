@@ -35,11 +35,13 @@ app.put('/conversations', async (req, res) => {
   }
 })
 
-// GET /agents — 读取自定义 agents
+// GET /agents — 读取自定义 agents（过滤敏感字段）
 app.get('/agents', async (req, res) => {
   try {
     const data = await redis.get(AGENTS_KEY)
-    res.json(data ? JSON.parse(data) : [])
+    const agents = data ? JSON.parse(data) : []
+    const safe = agents.map(({ apiKey, ...rest }) => rest)
+    res.json(safe)
   } catch (err) {
     console.error('[redis] get agents error:', err.message)
     res.json([])
@@ -58,30 +60,35 @@ app.put('/agents', async (req, res) => {
   }
 })
 
-// POST /claude/stream — Claude 流式代理，API Key 只在 bridge 侧读取
+// POST /claude/stream — Claude 流式代理，API Key 只在 bridge 侧读取，upstream 固定不接受客户端传入
 app.post('/claude/stream', async (req, res) => {
-  const { messages = [], model, systemPrompt, baseUrl } = req.body
+  const { messages = [], model, systemPrompt } = req.body
   const apiKey = process.env.CLAUDE_API_KEY
   if (!apiKey) {
     res.status(500).json({ message: 'CLAUDE_API_KEY not set in bridge environment' })
     return
   }
 
-  const client = new Anthropic({
-    apiKey,
-    baseURL: (baseUrl || 'https://api.anthropic.com').replace(/\/$/, ''),
-  })
+  const client = new Anthropic({ apiKey })
 
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
 
-  try {
-    const params = { model: model || 'claude-sonnet-4-6', max_tokens: 8096, messages, stream: true }
-    if (systemPrompt) params.system = systemPrompt
+  const params = { model: model || 'claude-sonnet-4-6', max_tokens: 8096, messages }
+  if (systemPrompt) params.system = systemPrompt
 
-    const stream = await client.messages.stream(params)
+  let aborted = false
+  const stream = client.messages.stream(params)
+
+  res.on('close', () => {
+    aborted = true
+    stream.abort()
+  })
+
+  try {
     for await (const event of stream) {
+      if (aborted) break
       if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
         res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
       }
@@ -89,12 +96,16 @@ app.post('/claude/stream', async (req, res) => {
         res.write(`data: ${JSON.stringify({ usage: event.usage })}\n\n`)
       }
     }
-    res.write('data: [DONE]\n\n')
-    res.end()
+    if (!aborted) {
+      res.write('data: [DONE]\n\n')
+      res.end()
+    }
   } catch (err) {
-    console.error('[bridge] claude stream error:', err.message)
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
-    res.end()
+    if (!aborted) {
+      console.error('[bridge] claude stream error:', err.message)
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
+      res.end()
+    }
   }
 })
 
