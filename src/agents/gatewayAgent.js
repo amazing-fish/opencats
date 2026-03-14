@@ -6,6 +6,20 @@
 
 const BRIDGE = import.meta.env.VITE_CODEX_BRIDGE_URL || 'http://localhost:4891'
 
+// 启动时从 bridge 获取本地 token，后续所有请求携带
+let localToken = null
+async function getToken() {
+  if (localToken) return localToken
+  try {
+    const res = await fetch(`${BRIDGE}/token`)
+    const data = await res.json()
+    localToken = data.token
+  } catch {
+    console.error('[gateway] failed to fetch local token')
+  }
+  return localToken
+}
+
 /**
  * @param {string} provider - 'claudecode' | 'codex'
  * @param {Array} messages - [{role, content}]
@@ -21,12 +35,16 @@ export function streamProvider({ provider, messages, model, systemPrompt, onChun
 
   const run = async () => {
     try {
+      const token = await getToken()
       const body = { provider, messages, model }
       if (systemPrompt) body.systemPrompt = systemPrompt
 
       const res = await fetch(`${BRIDGE}/gateway/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'x-local-token': token } : {}),
+        },
         body: JSON.stringify(body),
         signal: controller.signal,
       })

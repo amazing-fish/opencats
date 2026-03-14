@@ -9,8 +9,8 @@ import * as codex from './providers/codex.js'
 
 const PROVIDERS = { claudecode: claude, codex }
 
-export function registerGateway(app) {
-  app.post('/gateway/stream', async (req, res) => {
+export function registerGateway(app, requireLocalToken) {
+  app.post('/gateway/stream', requireLocalToken, async (req, res) => {
     const { provider, messages = [], model, systemPrompt } = req.body
     const adapter = PROVIDERS[provider]
 

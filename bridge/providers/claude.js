@@ -5,8 +5,6 @@
  */
 import Anthropic from '@anthropic-ai/sdk'
 
-const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
-
 export const id = 'claudecode'
 
 export function isAvailable() {
@@ -18,6 +16,8 @@ export async function* stream({ messages, model = 'claude-sonnet-4-6', systemPro
     yield { type: 'error', message: 'CLAUDE_API_KEY not set in bridge environment' }
     return
   }
+
+  const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
 
   const params = { model, max_tokens: 8096, messages }
   if (systemPrompt) params.system = systemPrompt
