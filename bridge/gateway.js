@@ -6,6 +6,7 @@
  */
 import * as claude from './providers/claude.js'
 import * as codex from './providers/codex.js'
+import { withPolicy } from './policy.js'
 
 const PROVIDERS = { claudecode: claude, codex }
 
@@ -27,7 +28,7 @@ export function registerGateway(app, requireLocalToken) {
     res.on('close', () => ac.abort())
 
     try {
-      for await (const event of adapter.stream({ messages, model, systemPrompt, signal: ac.signal })) {
+      for await (const event of withPolicy(provider, adapter.stream, { messages, model, systemPrompt, signal: ac.signal })) {
         if (ac.signal.aborted) break
         res.write(`data: ${JSON.stringify(event)}\n\n`)
         if (event.type === 'done' || event.type === 'error') break
