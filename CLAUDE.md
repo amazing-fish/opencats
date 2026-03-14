@@ -27,7 +27,7 @@
 |------|------|
 | Redis | WSL 内运行，`wsl redis-server --daemonize yes`，监听 `127.0.0.1:6379` |
 | codex.exe | 路径由 `CODEX_EXE_PATH` 环境变量指定，或修改 `bridge/server.js:38` |
-| `.env` | 复制 `.env.example`，填入 `VITE_CLAUDE_API_KEY` |
+| `.env` | 复制 `.env.example`，填入 `CLAUDE_API_KEY`（bridge 侧，不进前端） |
 
 启动：`npm run dev`（同时启动 bridge + Vite）
 
@@ -35,7 +35,7 @@
 
 | # | 问题 | 状态 |
 |---|------|------|
-| P1-1 | API Key 暴露在前端 bundle | 待修复 |
+| P1-1 | API Key 暴露在前端 bundle | ✅ 已修复（Key 移入 bridge process.env，Redis 过滤敏感字段） |
 | P1-2 | 会话 ID 自增，刷新后冲突 | ✅ 已修复（UUID） |
 | P1-3 | streaming 期间频繁写 Redis | 待修复 |
 | P1-4 | sendMessage 闭包快照导致历史丢失 | 待修复 |
@@ -48,7 +48,6 @@
   多 Agent 并发对话 ✓ / Redis 持久化 ✓ / 停止切换会话 ✓
 
 下一步
-  P1-1 API Key 移入 bridge
   P1-3 Redis 写入防抖
   P1-4 sendMessage 闭包修复
   Agent 工作目录隔离（每会话独立 cwd）
