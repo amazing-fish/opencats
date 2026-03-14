@@ -38,6 +38,6 @@ export async function* stream({ messages, model = 'claude-sonnet-4-6', systemPro
     }
     if (!signal?.aborted) yield { type: 'done' }
   } catch (err) {
-    if (!signal?.aborted) yield { type: 'error', message: err.message }
+    if (!signal?.aborted) yield { type: 'error', message: err.message, status: err.status ?? err.statusCode }
   }
 }

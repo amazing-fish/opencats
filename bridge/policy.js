@@ -116,7 +116,7 @@ export async function* withPolicy(provider, streamFn, params) {
           if (event.type === 'usage') usage = event.usage
 
           if (event.type === 'error') {
-            // 把 yielded error 转为内部错误，走 retry 判断，不直接透传
+            // 把 yielded error 转为内部错误，走 retry 判断，保留 status 供 isRetryable() 使用
             yieldedError = Object.assign(new Error(event.message || 'provider error'), { status: event.status })
             break
           }
