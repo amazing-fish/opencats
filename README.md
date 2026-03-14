@@ -50,7 +50,7 @@ bridge/server.js  (Express :4891)
 - 前端唯一状态源：`useChatStore` + `useAgentStore`（无 Zustand/Redux）
 - Bridge 是唯一外部通信出口，API Key 仅在 bridge `process.env` 中，不进前端 bundle
 - 会话 ID 全部使用 `crypto.randomUUID()`
-- CORS + local token 双重校验，仅允许本机前端访问
+- `/gateway/stream` 等 AI 路由受 local token 鉴权保护；`/conversations`、`/agents` 等数据路由依赖 CORS 白名单（localhost:5173/4173），无 token 校验
 
 ---
 

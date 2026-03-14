@@ -55,7 +55,7 @@
   gateway policy 层（timeout / retry / concurrency / logging）✓
 
 下一步
-  issue #9 follow-up: gateway policy 进一步完善（per-provider 策略差异）
+  gateway policy 进一步完善（per-provider 策略差异、usage/cost 统计 hook）
   Agent 工作目录隔离（每会话独立 cwd）
 
 未来
