@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@tailwindcss/typography": "^0.5.19",
     "dompurify": "^3.3.3",
     "lucide-react": "^0.469.0",

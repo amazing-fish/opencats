@@ -3,6 +3,7 @@ import cors from 'cors'
 import { spawn } from 'child_process'
 import { existsSync } from 'fs'
 import Redis from 'ioredis'
+import Anthropic from '@anthropic-ai/sdk'
 
 const app = express()
 app.use(cors())
@@ -45,14 +46,55 @@ app.get('/agents', async (req, res) => {
   }
 })
 
-// PUT /agents — 保存自定义 agents
+// PUT /agents — 保存自定义 agents（过滤敏感字段）
 app.put('/agents', async (req, res) => {
   try {
-    await redis.set(AGENTS_KEY, JSON.stringify(req.body))
+    const safe = (Array.isArray(req.body) ? req.body : []).map(({ apiKey, ...rest }) => rest)
+    await redis.set(AGENTS_KEY, JSON.stringify(safe))
     res.json({ ok: true })
   } catch (err) {
     console.error('[redis] set agents error:', err.message)
     res.status(500).json({ message: err.message })
+  }
+})
+
+// POST /claude/stream — Claude 流式代理，API Key 只在 bridge 侧读取
+app.post('/claude/stream', async (req, res) => {
+  const { messages = [], model, systemPrompt, baseUrl } = req.body
+  const apiKey = process.env.CLAUDE_API_KEY
+  if (!apiKey) {
+    res.status(500).json({ message: 'CLAUDE_API_KEY not set in bridge environment' })
+    return
+  }
+
+  const client = new Anthropic({
+    apiKey,
+    baseURL: (baseUrl || 'https://api.anthropic.com').replace(/\/$/, ''),
+  })
+
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+
+  try {
+    const params = { model: model || 'claude-sonnet-4-6', max_tokens: 8096, messages, stream: true }
+    if (systemPrompt) params.system = systemPrompt
+
+    const stream = await client.messages.stream(params)
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+        res.write(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
+      }
+      if (event.type === 'message_delta' && event.usage) {
+        res.write(`data: ${JSON.stringify({ usage: event.usage })}\n\n`)
+      }
+    }
+    res.write('data: [DONE]\n\n')
+    res.end()
+  } catch (err) {
+    console.error('[bridge] claude stream error:', err.message)
+    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
+    res.end()
   }
 })
 
