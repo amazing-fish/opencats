@@ -67,9 +67,11 @@
 
 ```
 src/
-  agents/         # claudeCodeAgent.js / codexAgent.js — 流式请求封装
+  agents/         # gatewayAgent.js — 唯一前端 provider 请求入口
   components/     # UI 组件
   store/          # chatStore.js — 唯一状态源
 bridge/
-  server.js       # Express 桥接，持有 API Key，spawn codex.exe
+  server.js       # Express 桥接，持有 API Key，token 鉴权
+  gateway.js      # 统一 provider 路由
+  providers/      # claude.js / codex.js — provider adapter
 ```
