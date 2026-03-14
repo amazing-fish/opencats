@@ -148,13 +148,14 @@ export async function* withPolicy(provider, streamFn, params) {
       }
 
       // adapter yielded error → 判断是否可重试
+      // 只有在尚未向客户端发出任何 chunk 时才重试，避免重复/损坏输出
       if (yieldedError) {
         lastErr = yieldedError
-        if (isRetryable(yieldedError) && attempt < POLICY.maxRetries) {
+        if (isRetryable(yieldedError) && attempt < POLICY.maxRetries && chunks === 0) {
           attempt++
           continue
         }
-        log('error', provider, 'request failed', { error: lastErr.message, attempts: attempt + 1 })
+        log('error', provider, 'request failed', { error: lastErr.message, attempts: attempt + 1, chunks })
         yield { type: 'error', message: lastErr.message }
         return
       }
