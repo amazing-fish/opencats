@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+
+/* Markdown 渲染样式 */
+.prose { color: inherit; }
+.prose code { background: rgba(0,0,0,0.12); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.875em; color: #c0392b; }
+.prose pre { background: #1e1e1e; padding: 1em; border-radius: 8px; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; color: #d4d4d4; }
+.prose a { color: #D87C65; text-decoration: underline; }
+.prose ul, .prose ol { padding-left: 1.5em; }
+.prose blockquote { border-left: 3px solid #D87C65; padding-left: 1em; color: inherit; opacity: 0.8; }

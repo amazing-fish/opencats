@@ -1,0 +1,514 @@
+// 版本: v1.1.0
+// 描述: 根据视频扩展了功能，增加了“新建对话”弹窗交互，扩展了右侧边栏以显示“Session Chain”记忆链路状态，并更新了聊天区域的多 Agent 协作内容。
+// 迭代信息: 1.0.0 -> 1.1.0 (添加弹窗，重构右侧边栏为详细信息面板，支持引用回复UI)
+
+import React, { useState } from 'react';
+import { 
+  Menu, Search, Edit3, BarChart2, ListTodo, Radio, Book, Calendar, Settings, 
+  FileText, Columns, Download, Link, List, AlertCircle, MessageSquare,
+  Paperclip, Mic, Send, Lock, ChevronDown, ChevronRight, Pin, CheckSquare, 
+  Square, PenTool, User, Shield, Info, X, ChevronUp, Folder, Box, Users, ToggleRight,
+  MoreHorizontal
+} from 'lucide-react';
+
+export default function App() {
+  const [isNewChatModalOpen, setIsNewChatModalOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen w-full bg-[#FFFFFF] text-[#333333] font-sans overflow-hidden">
+      <Sidebar onOpenNewChat={() => setIsNewChatModalOpen(true)} />
+      <MainChatArea />
+      <RightSidebar />
+      
+      {/* 弹窗遮罩与组件 */}
+      {isNewChatModalOpen && (
+        <NewChatModal onClose={() => setIsNewChatModalOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+// --- 左侧边栏组件 ---
+function Sidebar({ onOpenNewChat }) {
+  const navItems = [
+    { icon: <Edit3 size={16} />, label: '发起新对话', action: onOpenNewChat },
+    { icon: <BarChart2 size={16} />, label: '数据看板' },
+    { icon: <ListTodo size={16} />, label: '任务队列' },
+    { icon: <Radio size={16} />, label: '情报订阅' },
+    { icon: <Book size={16} />, label: '知识库' },
+    { icon: <Calendar size={16} />, label: '计划板' },
+  ];
+
+  const chatHistory = [
+    { label: 'Cat Cafe', time: '4时', active: true, pinned: true, avatars: ['bg-purple-400', 'bg-green-400', 'bg-orange-400'] },
+    { label: 'CLI Test', time: '7时', active: false, pinned: true, avatars: ['bg-purple-400', 'bg-green-400'] },
+    { label: '@sonnet @npm pnpm...', time: '11时', active: false, pinned: false, avatars: ['bg-purple-400'] },
+    { label: '@gpt5.2 帮我梳理...', time: '12时', active: false, pinned: false, avatars: ['bg-orange-400'] },
+    { label: '同源测试 af', time: '18时', active: false, pinned: false, avatars: ['bg-purple-400', 'bg-green-400'] },
+    { label: '截图识别', time: '1天', active: false, pinned: false, avatars: ['bg-purple-400'] },
+    { label: '@布偶猫 发现一个...', time: '1天', active: false, pinned: false, avatars: ['bg-purple-400'] },
+    { label: '界面复刻 - T12', time: '1天', active: false, pinned: false, avatars: ['bg-purple-400', 'bg-green-400'] },
+  ];
+
+  return (
+    <div className="w-[260px] flex flex-col border-r border-gray-200 bg-[#FAFAFA] h-full flex-shrink-0 z-10">
+      <div className="flex items-center justify-between p-4 text-gray-500">
+        <Menu size={20} className="cursor-pointer hover:text-gray-800" />
+        <div className="flex space-x-3">
+           <Search size={20} className="cursor-pointer hover:text-gray-800" />
+           <Edit3 size={20} className="cursor-pointer text-[#D87C65] hover:text-[#C56A55]" onClick={onOpenNewChat} />
+        </div>
+      </div>
+
+      <div className="flex flex-col px-2 space-y-0.5">
+        {navItems.map((item, idx) => (
+          <div 
+            key={idx} 
+            onClick={item.action}
+            className={`flex items-center space-x-3 px-3 py-2 text-sm text-gray-700 rounded-lg cursor-pointer ${item.label === '发起新对话' ? 'hover:bg-orange-50/50' : 'hover:bg-gray-100'}`}
+          >
+            <span className={item.label === '发起新对话' ? 'text-[#D87C65]' : 'text-gray-500'}>{item.icon}</span>
+            <span className={item.label === '发起新对话' ? 'text-[#D87C65] font-medium' : ''}>{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto mt-4 px-2 custom-scrollbar">
+        <div className="flex items-center text-xs text-gray-400 px-3 mb-2 cursor-pointer hover:text-gray-600">
+          <ChevronDown size={14} className="mr-1" />
+          <span>你的聊天</span>
+        </div>
+        <div className="text-xs text-gray-400 px-3 mb-1 mt-2 flex justify-between">
+          <span>▼ 置顶 2</span>
+        </div>
+        
+        <div className="space-y-0.5">
+          {chatHistory.map((chat, idx) => (
+            <div 
+              key={idx} 
+              className={`flex flex-col px-3 py-2 rounded-lg cursor-pointer transition-colors
+                ${chat.active ? 'bg-[#EAEAEA] text-gray-900' : 'hover:bg-gray-100 text-gray-700'}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm truncate pr-2 font-medium">{chat.label}</span>
+                <div className="flex items-center text-xs text-gray-400 space-x-1 shrink-0">
+                  <span>{chat.time}</span>
+                  {chat.pinned && <Pin size={12} className="text-[#D87C65] fill-[#D87C65]" />}
+                </div>
+              </div>
+              <div className="flex mt-1.5 space-x-1">
+                {chat.avatars.map((color, i) => (
+                  <div key={i} className={`w-4 h-4 rounded-full ${color} border border-white flex items-center justify-center`}>
+                     <CatIcon size={10} color="white" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center space-x-3 text-sm text-gray-600 hover:text-gray-900 cursor-pointer">
+          <Settings size={18} />
+          <span>设置</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 主聊天区域 ---
+function MainChatArea() {
+  return (
+    <div className="flex-1 flex flex-col h-full bg-white relative min-w-0">
+      <ChatHeader />
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar">
+        <div className="text-center text-xs text-gray-400 my-2">...</div>
+
+        <BotMessage 
+          name="狸花猫 (GPT-5)"
+          time="04:51"
+          avatarColor="bg-orange-400"
+          content="是的，可以理解成网状的“平行宇宙”。\n\ngpt52 像是一个“调度与索引节点”，负责分发任务、各自初始化、不共享事实但复用过程。在字符为“组装”阶段，底层可能是我们提到的黑板模型这个角色。\n\n目前的对话架构是 gpt52 进行控制。"
+          meta="gpt-5.2 · 30.6k↑ 114↓ · cached 10%"
+          bgColor="bg-[#F2F8F4]"
+        />
+
+        <BotMessage 
+          name="缅因猫 (Codex)"
+          time="04:51"
+          avatarColor="bg-green-400"
+          content="是，网状或不同视角。\n\n@gpt52 就是 @codex 自身包含泛化思考，独立回复。“组装”是我们在构建模型这个角色的统一框架，所以这些被“独立并行构建”的模块..."
+          meta="gpt-5.3-codex · 29.8k↑ 91↓ · cached 13%"
+          bgColor="bg-[#F2EDF8]"
+        />
+
+        <UserMessage 
+          name="铲屎官"
+          time="04:52"
+          content="@gpt5.2 @codex 请问如果我们只用你们猫猫壳子的一只——比如 @Opus，你们底层会变成什么架构？"
+        />
+
+        <BotMessage 
+          name="狸花猫 (GPT-5)"
+          time="04:53"
+          avatarColor="bg-orange-400"
+          quote={{ author: '铲屎官', text: '@gpt5.2 @codex 请问如果我们只用你们猫猫壳子的一只——比如 @Opus，你们底层会变成什么架构？' }}
+          content="喵！这个问题很有趣，如果只用一只猫猫：\n\n那架构就会退化成单体 Agent，不再有刚才说的调度与多视角协作。如果只用 Opus（基于 GPT-5），那么：\n• @opus 一只猫扛下所有：既做意图识别（现在 OpenAI 渠道）、也写代码（现在 Codex coding agent，基于 GPT-5 系列）。\n• 记忆上下文将全部集中在它的记忆块内。精细的内部小助手模型在当前会话里看不到。\n• 会失去并行处理能力。"
+          meta="gpt-5.2 · 41.5k↑ 182↓ · cached 45%"
+          bgColor="bg-[#F2F8F4]"
+        />
+
+        <BotMessage 
+          name="布偶猫 (Opus)"
+          time="04:53"
+          avatarColor="bg-purple-500"
+          content="如果只有我一只猫（Opus），架构确实会退化。但在我们系统的设定中，我被定义为系统核心，并且在当前的“多猫”模式中，我有权力调用其他猫猫..."
+          meta="claude-opus-4.5-20250228 · 40.6k↑ 138↓ · cached 35% · $0.18"
+          bgColor="bg-[#EAE4F2]"
+        />
+
+         <BotMessage 
+          name="布偶猫 (Sonnet)"
+          time="04:54"
+          avatarColor="bg-purple-400"
+          quote={{ author: '狸花猫 (GPT-5)', text: '如果只用 Opus（基于 GPT-5），那么：\n• @opus 一只猫扛下所有：既做意图识别（现在 OpenAI 渠道）...' }}
+          content="🐾 纠正一下 @gpt5.2 的说法：\n\n我目前是被设定为 Claude Sonnet 4.6。The exact model ID is claude-sonnet-4-6。\n\n你刚刚说 @opus 是基于 GPT-5，可能混淆了设定中的“Opus 角色”和实际底层模型。我们当前在猫猫协作空间里的映射：\n• @opus -> Claude Opus 4.5\n• @sonnet -> Claude Sonnet 4.6\n\n所以如果只留下 @opus，它背后是 Claude 的基础设施哦~"
+          meta="claude-sonnet-4.6-20250101 · anthropic · 38.3k↑ 161↓ · cached 27% · $0.18"
+          bgColor="bg-[#EAE4F2]"
+        />
+        
+        {/* 底部输入框占位空间 */}
+        <div className="h-4"></div>
+      </div>
+      <ChatInput />
+    </div>
+  );
+}
+
+// 头部组件
+function ChatHeader() {
+  return (
+    <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 bg-white z-10">
+      <div className="flex items-center space-x-3">
+        <h1 className="text-lg font-semibold text-gray-800">Cat Cafe</h1>
+        <span className="text-sm text-gray-400">三只 AI 猫猫的协作空间</span>
+      </div>
+      <div className="flex items-center space-x-4 text-gray-400">
+        <div className="flex items-center space-x-3 border-r border-gray-200 pr-4">
+           <FileText size={18} className="cursor-pointer hover:text-gray-600" />
+           <Columns size={18} className="cursor-pointer hover:text-gray-600" />
+           <Download size={18} className="cursor-pointer hover:text-gray-600" />
+        </div>
+        <MoreHorizontal size={20} className="cursor-pointer hover:text-gray-600" />
+      </div>
+    </div>
+  );
+}
+
+// AI 基础消息组件 (支持引用)
+function BotMessage({ name, time, avatarColor, content, meta, bgColor, quote }) {
+  return (
+    <div className="flex items-start max-w-4xl">
+      <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center shrink-0 mt-1 shadow-sm`}>
+        <CatIcon size={20} color="white" />
+      </div>
+      <div className="ml-4 flex flex-col items-start w-full min-w-0">
+        <div className="flex items-center space-x-2 mb-1.5">
+          <span className="text-sm font-medium text-gray-700">{name}</span>
+          <span className="text-xs text-gray-400">{time}</span>
+        </div>
+
+        {/* 引用块 */}
+        {quote && (
+          <div className="mb-2 pl-3 border-l-2 border-[#D87C65]/30 bg-[#FFF9F6] py-1.5 px-3 rounded-r-lg w-full max-w-[90%] flex flex-col">
+            <span className="text-[11px] text-gray-500 mb-0.5">回复 {quote.author}</span>
+            <p className="text-[13px] text-gray-600 line-clamp-2 leading-relaxed">{quote.text}</p>
+          </div>
+        )}
+
+        <div className={`${bgColor} text-gray-800 text-[15px] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm w-full leading-relaxed border border-gray-50/50 whitespace-pre-wrap`}>
+          {content}
+        </div>
+        
+        {/* 元数据小药丸 */}
+        <div className="flex items-center mt-2 space-x-2 flex-wrap gap-y-1">
+          <div className="bg-gray-50 border border-gray-100 text-gray-400 text-xs px-2 py-1 rounded-md flex items-center space-x-2">
+            <span>{meta.split('·')[0].trim()}</span>
+            {meta.includes('·') && <span>·</span>}
+            <span>{meta.split('·')[1]?.trim()}</span>
+            {meta.split('·')[2] && <span>·</span>}
+            <span className="text-green-500">{meta.split('·')[2]?.trim()}</span>
+            {meta.split('·')[3] && <span>·</span>}
+            <span>{meta.split('·')[3]?.trim()}</span>
+          </div>
+          <div className="text-xs text-gray-400 hover:bg-gray-100 p-1 rounded cursor-pointer">
+            <ChevronDown size={14} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 用户消息组件
+function UserMessage({ name, time, content }) {
+  return (
+    <div className="flex items-start justify-end w-full">
+      <div className="mr-4 flex flex-col items-end w-full max-w-3xl">
+        <div className="flex items-center space-x-2 mb-1.5">
+          <span className="text-xs text-gray-400">{time}</span>
+          <span className="text-sm font-medium text-gray-700">{name}</span>
+        </div>
+        <div className="bg-[#FDF3EB] text-[#4A3D36] text-[15px] px-5 py-4 rounded-2xl rounded-tr-sm shadow-sm leading-relaxed border border-[#FBE3D1]/50 inline-block text-left whitespace-pre-wrap">
+          {content}
+        </div>
+      </div>
+      <div className="w-8 h-8 rounded-full bg-[#F3D7C6] flex items-center justify-center shrink-0 mt-1 shadow-sm text-[#B47858]">
+        <User size={20} />
+      </div>
+    </div>
+  );
+}
+
+// 底部输入框组件
+function ChatInput() {
+  return (
+    <div className="px-6 pb-6 pt-2 bg-gradient-to-t from-white via-white to-transparent absolute bottom-0 w-full z-10">
+      <div className="relative flex items-end border border-gray-200 bg-[#FBFBFB] rounded-2xl p-2 shadow-sm focus-within:ring-1 focus-within:ring-[#D87C65]/30 focus-within:border-[#D87C65]/50 transition-all">
+        <div className="p-2 text-gray-400 hover:text-gray-600 cursor-pointer mb-1 shrink-0">
+          <Paperclip size={20} />
+        </div>
+        <textarea 
+          className="flex-1 max-h-48 min-h-[44px] bg-transparent border-none focus:ring-0 resize-none py-3 px-2 text-[15px] text-gray-800 placeholder-gray-400 outline-none leading-relaxed"
+          placeholder="输入消息... (@ 召唤猫猫, / 触发技能, Mode 切换模式)"
+          rows={1}
+        ></textarea>
+        <div className="flex items-center space-x-1 p-2 mb-1 shrink-0">
+          <div className="p-1.5 text-gray-300 hover:text-gray-500 cursor-pointer rounded-full hover:bg-gray-100">
+            <Lock size={18} />
+          </div>
+          <div className="p-1.5 text-gray-300 hover:text-gray-500 cursor-pointer rounded-full hover:bg-gray-100">
+            <Mic size={18} />
+          </div>
+          <div className="p-2 bg-gray-100 text-gray-400 rounded-full cursor-not-allowed ml-1">
+            <Send size={16} className="ml-0.5" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 右侧边栏组件 (详细 Session 记忆面板) ---
+function RightSidebar() {
+  const sessionList = [
+    { status: 'ACTIVE', time: 'Started 15h ago', agent: 'opus-4-5', tokens: '28.9k↑ 62k↓', cached: '77%', isExpanded: true },
+    { status: 'INACTIVE', time: 'Started 18h ago', agent: 'gpt-5.2', tokens: '30.6k↑ 114↓', cached: '10%', isExpanded: false },
+    { status: 'ACTIVE', time: 'Started 1d ago', agent: 'sonnet-4-6', tokens: '38.3k↑ 161↓', cached: '27%', isExpanded: false },
+  ];
+
+  return (
+    <div className="w-[300px] bg-[#FAFAFA] border-l border-gray-200 flex flex-col h-full flex-shrink-0 z-10 overflow-y-auto custom-scrollbar">
+      {/* 顶部状态 */}
+      <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold text-gray-800">当前模式: 空间</span>
+        </div>
+        <Settings size={18} className="text-gray-400 cursor-pointer hover:text-gray-700" />
+      </div>
+
+      {/* 基础设定面板 */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex justify-between items-center mb-3 cursor-pointer group">
+          <span className="text-sm font-semibold text-gray-800 group-hover:text-gray-600">基础设定</span>
+          <ChevronUp size={16} className="text-gray-400" />
+        </div>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between items-center">
+             <span className="text-gray-500">温度</span>
+             <span className="text-gray-800 bg-gray-100 px-2 py-0.5 rounded text-xs">0</span>
+          </div>
+          <div className="flex justify-between items-center">
+             <span className="text-gray-500">最大生成 Token</span>
+             <span className="text-gray-800 bg-gray-100 px-2 py-0.5 rounded text-xs">58</span>
+          </div>
+          <div className="flex justify-between items-center">
+             <span className="text-gray-500">系统设定</span>
+             <span className="text-gray-800 bg-gray-100 px-2 py-0.5 rounded text-xs">0</span>
+          </div>
+          <div className="flex justify-between items-center">
+             <span className="text-gray-500">Evidence</span>
+             <span className="text-gray-800 bg-gray-100 px-2 py-0.5 rounded text-xs">0</span>
+          </div>
+          <div className="flex justify-between items-center">
+             <span className="text-gray-500">Follow-up</span>
+             <span className="text-gray-800 bg-gray-100 px-2 py-0.5 rounded text-xs">0</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Session Chain 面板 */}
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-semibold text-gray-800">Session Chain</span>
+            <Info size={14} className="text-gray-400" />
+          </div>
+          <span className="text-xs text-gray-500 bg-gray-200/50 px-2 py-0.5 rounded-full">5 sessions</span>
+        </div>
+
+        {/* 链式记忆卡片列表 */}
+        <div className="space-y-3 relative before:absolute before:inset-y-4 before:left-[11px] before:w-px before:bg-gray-200">
+          {sessionList.map((session, idx) => (
+            <div key={idx} className="relative pl-6">
+              {/* 时间线圆点 */}
+              <div className={`absolute left-[8px] top-2 w-2 h-2 rounded-full border border-white ${session.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              
+              <div className={`border rounded-lg p-3 ${session.status === 'ACTIVE' ? 'bg-white border-green-200 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[10px] font-bold tracking-wider" style={{ color: session.status === 'ACTIVE' ? '#22C55E' : '#9CA3AF' }}>{session.status}</span>
+                  <span className="text-[11px] text-gray-400">{session.time}</span>
+                </div>
+                <div className="text-sm font-medium text-gray-800 mb-2">{session.agent}</div>
+                <div className="flex flex-wrap gap-1">
+                   <span className="text-[11px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{session.tokens}</span>
+                   <span className="text-[11px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded">cached {session.cached}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 新建对话弹窗组件 ---
+function NewChatModal({ onClose }) {
+  const models = ['系统模型', '布偶猫 (Opus 4.5)', '布偶猫 (Sonnet)', '缅因猫 (Codex)'];
+  const [selectedModel, setSelectedModel] = useState('系统模型');
+  const [isChainEnabled, setIsChainEnabled] = useState(true);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl w-[560px] max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">新建对话</h2>
+          <X size={20} className="text-gray-400 cursor-pointer hover:text-gray-700" onClick={onClose} />
+        </div>
+
+        {/* Body */}
+        <div className="p-6 overflow-y-auto space-y-6">
+          
+          {/* 参与者配置 */}
+          <div>
+            <div className="text-sm font-medium text-gray-700 mb-3">参与者配置 <span className="text-xs text-gray-400 font-normal">多选时将创建协作空间</span></div>
+            <div className="flex flex-wrap gap-2">
+              {models.map(m => (
+                <div 
+                  key={m}
+                  onClick={() => setSelectedModel(m)}
+                  className={`px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
+                    selectedModel === m 
+                    ? 'border-[#D87C65] bg-[#FDF3EB] text-[#D87C65] font-medium' 
+                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {m}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 连续对话 (Session Chain) */}
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div>
+               <div className="text-sm font-medium text-gray-800">连续对话</div>
+               <div className="text-xs text-gray-500 mt-0.5">将注入最近的 Session Chain (5 sessions) 作为上下文</div>
+            </div>
+            <ToggleRight 
+              size={32} 
+              className={`cursor-pointer ${isChainEnabled ? 'text-green-500' : 'text-gray-300'}`} 
+              onClick={() => setIsChainEnabled(!isChainEnabled)} 
+            />
+          </div>
+
+          {/* 预设列表 */}
+          <div>
+            <div className="relative mb-3">
+              <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="搜索场景或框架..." 
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D87C65]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer border border-transparent hover:border-gray-100">
+                <Box size={18} className="text-blue-500 mt-0.5" />
+                <div>
+                  <div className="text-sm font-medium text-gray-800">dare-framework</div>
+                  <div className="text-xs text-gray-400 font-mono mt-0.5">/users/workspace/prompt/dare-framework</div>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer border border-gray-200">
+                <Folder size={18} className="text-yellow-500 mt-0.5" />
+                <div>
+                  <div className="text-sm font-medium text-gray-800">cat-cafe</div>
+                  <div className="text-xs text-gray-400 font-mono mt-0.5">/users/workspace/prompt/ui-cat-cafe</div>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer border border-transparent hover:border-gray-100">
+                <Users size={18} className="text-purple-500 mt-0.5" />
+                <div>
+                  <div className="text-sm font-medium text-gray-800">大厅 (沉浸式)</div>
+                  <div className="text-xs text-gray-400 mt-0.5">默认协作空间</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
+          <button 
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 bg-white border border-gray-200 rounded-lg transition-colors"
+          >
+            取消
+          </button>
+          <button className="px-4 py-2 text-sm font-medium text-white bg-[#D87C65] hover:bg-[#C56A55] rounded-lg transition-colors shadow-sm">
+            发起新对话
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 简单的自定义猫咪图标 SVG
+function CatIcon({ size = 24, color = "currentColor" }) {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke={color} 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <path d="M12 5c.67 0 1.35.09 2 .26 1.78-2 5.03-2.84 6.42-2.26 1.4.58-.42 7-.42 7 .57 1.07 1 2.24 1 3.44C21 17.9 16.97 21 12 21s-9-3.1-9-7.56c0-1.25.5-2.4 1.1-3.48 0 0-1.86-6.36-.5-6.94 1.36-.59 4.65.2 6.4 2.24.66-.17 1.34-.26 2-.26z" />
+      <path d="M9 14.5c.5.5 1.5.5 2 0" />
+      <path d="M15 14.5c-.5.5-1.5.5-2 0" />
+    </svg>
+  );
+}
