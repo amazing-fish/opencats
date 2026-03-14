@@ -34,7 +34,6 @@ function log(level, provider, msg, extra = {}) {
 }
 
 // ── 可重试错误判断 ────────────────────────────────────────────────────────────
-// 只对网络/限流类错误重试，不重试业务错误（key 无效、内容违规等）
 
 function isRetryable(err) {
   if (!err) return false
@@ -50,6 +49,17 @@ function isRetryable(err) {
 // ── sleep ─────────────────────────────────────────────────────────────────────
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+// ── 合并多个 AbortSignal ──────────────────────────────────────────────────────
+
+function anyAbort(...signals) {
+  const ac = new AbortController()
+  for (const s of signals) {
+    if (s.aborted) { ac.abort(); break }
+    s.addEventListener('abort', () => ac.abort(), { once: true })
+  }
+  return ac.signal
+}
 
 // ── 核心：withPolicy ──────────────────────────────────────────────────────────
 
@@ -71,85 +81,106 @@ export async function* withPolicy(provider, streamFn, params) {
   const startTs = Date.now()
   log('info', provider, 'request start', { model: params.model })
 
-  let attempt = 0
-  let lastErr = null
+  // finally 块保证无论何种退出路径都释放计数
+  try {
+    let attempt = 0
+    let lastErr = null
 
-  while (attempt <= POLICY.maxRetries) {
-    if (attempt > 0) {
-      const delay = POLICY.retryBaseMs * 2 ** (attempt - 1)
-      log('warn', provider, 'retrying', { attempt, delayMs: delay, error: lastErr?.message })
-      await sleep(delay)
-    }
+    while (attempt <= POLICY.maxRetries) {
+      if (attempt > 0) {
+        const delay = POLICY.retryBaseMs * 2 ** (attempt - 1)
+        log('warn', provider, 'retrying', { attempt, delayMs: delay, error: lastErr?.message })
+        await sleep(delay)
+      }
 
-    try {
-      // 超时控制：用独立 AbortController 包装，超时后 abort
+      // 客户端已断开，不再重试
+      if (params.signal?.aborted) {
+        log('info', provider, 'request aborted by client', { durationMs: Date.now() - startTs })
+        return
+      }
+
       const timeoutAc = new AbortController()
       const timer = setTimeout(() => timeoutAc.abort(), POLICY.timeoutMs)
-
-      // 合并外部 signal 和超时 signal
       const signal = params.signal
         ? anyAbort(params.signal, timeoutAc.signal)
         : timeoutAc.signal
 
       let usage = null
       let chunks = 0
+      let yieldedError = null  // adapter 以 event 形式 yield 的错误
+      let timedOut = false
 
       try {
         for await (const event of streamFn({ ...params, signal })) {
           if (event.type === 'chunk') chunks++
           if (event.type === 'usage') usage = event.usage
+
+          if (event.type === 'error') {
+            // 把 yielded error 转为内部错误，走 retry 判断，不直接透传
+            yieldedError = Object.assign(new Error(event.message || 'provider error'), { status: event.status })
+            break
+          }
+
           yield event
-          if (event.type === 'done' || event.type === 'error') break
+          if (event.type === 'done') break
         }
       } finally {
         clearTimeout(timer)
+        // 超时：timeoutAc 已 abort 但客户端未 abort
+        if (timeoutAc.signal.aborted && !params.signal?.aborted) {
+          timedOut = true
+        }
       }
 
-      // 成功：记录 usage
+      // 客户端主动断开
+      if (params.signal?.aborted) {
+        log('info', provider, 'request aborted by client', { durationMs: Date.now() - startTs })
+        return
+      }
+
+      // 超时
+      if (timedOut) {
+        log('warn', provider, 'request timeout', { timeoutMs: POLICY.timeoutMs, attempt })
+        lastErr = Object.assign(new Error(`Request timed out after ${POLICY.timeoutMs}ms`), { _timeout: true })
+        // 超时不重试（流式请求不幂等）
+        yield { type: 'error', message: lastErr.message }
+        return
+      }
+
+      // adapter yielded error → 判断是否可重试
+      if (yieldedError) {
+        lastErr = yieldedError
+        if (isRetryable(yieldedError) && attempt < POLICY.maxRetries) {
+          attempt++
+          continue
+        }
+        log('error', provider, 'request failed', { error: lastErr.message, attempts: attempt + 1 })
+        yield { type: 'error', message: lastErr.message }
+        return
+      }
+
+      // 成功
       log('info', provider, 'request done', {
         durationMs: Date.now() - startTs,
         chunks,
         usage,
         attempt,
       })
-      activeRequests--
       return
-
-    } catch (err) {
-      lastErr = err
-
-      if (params.signal?.aborted) {
-        log('info', provider, 'request aborted by client', { durationMs: Date.now() - startTs })
-        activeRequests--
-        return
-      }
-
-      if (err.name === 'AbortError' && !params.signal?.aborted) {
-        // 超时
-        log('warn', provider, 'request timeout', { timeoutMs: POLICY.timeoutMs, attempt })
-        yield { type: 'error', message: `Request timed out after ${POLICY.timeoutMs}ms` }
-        activeRequests--
-        return
-      }
-
-      if (!isRetryable(err) || attempt >= POLICY.maxRetries) break
-      attempt++
     }
+
+    // 重试耗尽（thrown error 路径）
+    log('error', provider, 'request failed', { error: lastErr?.message, attempts: attempt + 1 })
+    yield { type: 'error', message: lastErr?.message || 'Unknown gateway error' }
+
+  } catch (err) {
+    if (params.signal?.aborted) {
+      log('info', provider, 'request aborted by client', { durationMs: Date.now() - startTs })
+      return
+    }
+    log('error', provider, 'unexpected error', { error: err.message })
+    yield { type: 'error', message: err.message }
+  } finally {
+    activeRequests--
   }
-
-  // 重试耗尽
-  log('error', provider, 'request failed', { error: lastErr?.message, attempts: attempt + 1 })
-  yield { type: 'error', message: lastErr?.message || 'Unknown gateway error' }
-  activeRequests--
-}
-
-// ── 工具：任意一个 signal abort 即触发 ────────────────────────────────────────
-
-function anyAbort(...signals) {
-  const ac = new AbortController()
-  for (const s of signals) {
-    if (s.aborted) { ac.abort(); break }
-    s.addEventListener('abort', () => ac.abort(), { once: true })
-  }
-  return ac.signal
 }
