@@ -42,8 +42,8 @@
 |---|------|------|
 | P1-1 | API Key 暴露在前端 bundle | ✅ 已修复（Key 移入 bridge process.env，Redis 过滤敏感字段） |
 | P1-2 | 会话 ID 自增，刷新后冲突 | ✅ 已修复（UUID） |
-| P1-3 | streaming 期间频繁写 Redis | 待修复 |
-| P1-4 | sendMessage 闭包快照导致历史丢失 | 待修复 |
+| P1-3 | streaming 期间频繁写 Redis | ✅ 已修复（600ms 防抖，conversations 变化时写） |
+| P1-4 | sendMessage 闭包快照导致历史丢失 | ✅ 已修复（activeIdRef 同步读取） |
 | P1-5 | codex bridge 丢弃多轮上下文 | ✅ 已修复（历史拼接） |
 
 ## 演进路径
@@ -51,14 +51,14 @@
 ```
 当前（MVP）
   多 Agent 并发对话 ✓ / Redis 持久化 ✓ / 停止切换会话 ✓
+  统一 provider gateway ✓ / bridge-only auth ✓ / CORS + token 鉴权 ✓
+  gateway policy 层（timeout / retry / concurrency / logging）✓
 
 下一步
-  P1-3 Redis 写入防抖
-  P1-4 sendMessage 闭包修复
   Agent 工作目录隔离（每会话独立 cwd）
+  消息导出（Markdown/JSON）
 
 未来
-  消息导出（Markdown/JSON）
   Agent 自定义 system prompt
   Codex 原生多轮 API 支持
 ```
