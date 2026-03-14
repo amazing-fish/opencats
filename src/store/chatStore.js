@@ -199,7 +199,7 @@ export function useChatStore(agents = []) {
         }
         const ctrl = cfg.provider === 'codex'
           ? streamCodex({ messages: history, model: cfg.modelId, ...handlers })
-          : streamClaudeCode({ messages: history, model: cfg.modelId, apiKey: cfg.apiKey, baseUrl: cfg.baseUrl, systemPrompt: cfg.systemPrompt, ...handlers })
+          : streamClaudeCode({ messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
         abortRefs.current[msgId] = ctrl
       })
     }, 0)
@@ -312,7 +312,7 @@ export function useChatStore(agents = []) {
 
         const ctrl = cfg.provider === 'codex'
           ? streamCodex({ messages: history, model: cfg.modelId, ...handlers })
-          : streamClaudeCode({ messages: history, model: cfg.modelId, apiKey: cfg.apiKey, baseUrl: cfg.baseUrl, systemPrompt: cfg.systemPrompt, ...handlers })
+          : streamClaudeCode({ messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
 
         abortRefs.current[msgId] = ctrl
       })
