@@ -19,7 +19,7 @@
 | 多 Agent 并发对话 | 同一条消息同时发给多个 AI，并排流式展示回复 |
 | @mention 路由 | AI 回复中 `@name` 自动触发目标 Agent 响应，支持链式协作 |
 | 会话持久化 | Redis 存储全量会话，刷新不丢失，UUID 防冲突 |
-| 自定义 Agent | 可配置任意 Claude / Codex 模型、system prompt、API Key |
+| 自定义 Agent | 可配置任意 Claude / Codex 模型、system prompt |
 | 流式输出 + 停止 | 实时显示 token，支持随时中断所有 Agent |
 | Token 统计 | 每条回复显示 input/output token 用量 |
 | Bridge 中转 | 前端不直连 AI API，全部经由本地 Express bridge |
@@ -28,8 +28,7 @@
 
 | # | 问题 |
 |---|------|
-| P1-1 | API Key 目前仍可通过前端 bundle 读取，需移入 bridge `process.env` |
-| P1-3 | streaming 期间每 chunk 触发 Redis 写入，需防抖至 `onDone` 时写 |
+| P1-5 | issue #9 gateway policy 后续：usage 统计 hook、per-provider 限流 |
 
 ---
 
@@ -37,19 +36,21 @@
 
 ```
 浏览器 (Vite + React + Tailwind)
-         ↕  fetch / SSE
+         ↕  fetch / SSE  (localhost:4891, local token auth)
 bridge/server.js  (Express :4891)
-         ↕
-  Redis :6379          Anthropic API
-  cat-cafe:conversations    /v1/messages
-  cat-cafe:agents
-         ↕
-  codex.exe  (OpenAI Codex CLI，可选)
+         ↕                    ↕
+  Redis :6379          gateway.js + policy.js
+  cat-cafe:conversations    ↕              ↕
+  cat-cafe:agents    providers/claude.js  providers/codex.js
+                          ↕                    ↕
+                    Anthropic API          codex.exe (本地)
+                    /v1/messages
 ```
 
 - 前端唯一状态源：`useChatStore` + `useAgentStore`（无 Zustand/Redux）
-- Bridge 是唯一外部通信出口，持有 API Key
+- Bridge 是唯一外部通信出口，API Key 仅在 bridge `process.env` 中，不进前端 bundle
 - 会话 ID 全部使用 `crypto.randomUUID()`
+- CORS + local token 双重校验，仅允许本机前端访问
 
 ---
 
@@ -79,8 +80,9 @@ cp .env.example .env
 编辑 `.env`：
 
 ```env
-VITE_CLAUDE_API_KEY=sk-ant-xxxxxxxx
-VITE_CLAUDE_BASE_URL=https://api.anthropic.com
+# Bridge 侧 Claude API Key（只在 bridge/server.js 中读取，不进前端 bundle）
+CLAUDE_API_KEY=sk-ant-xxxxxxxx
+
 VITE_CODEX_BRIDGE_URL=http://localhost:4891
 
 # 可选：指定 codex.exe 路径
@@ -104,7 +106,7 @@ npm run dev
 | 布偶猫 | claude-sonnet-4-6 | Anthropic API |
 | 缅因猫 | gpt-5.4 | Codex CLI（本地） |
 
-在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、API Key、Base URL、System Prompt。
+在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。API Key 统一在 bridge `.env` 中配置，不在 UI 中暴露。
 
 ---
 
@@ -121,8 +123,7 @@ npm run dev
 ```
 src/
   agents/
-    claudeCodeAgent.js   # Anthropic API 流式请求封装
-    codexAgent.js        # Codex CLI SSE 封装
+    gatewayAgent.js      # 统一 gateway SSE 封装（所有 provider 共用）
   components/
     Sidebar.jsx          # 会话列表
     MainChatArea.jsx     # 消息流展示
@@ -135,7 +136,12 @@ src/
     chatStore.js         # 会话 / 消息 / 流式状态
     agentStore.js        # Agent 配置管理
 bridge/
-  server.js              # Express 桥接，spawn codex.exe，Redis 读写
+  server.js              # Express 桥接，Redis 读写，local token 鉴权
+  gateway.js             # Provider 路由，SSE 输出
+  policy.js              # 超时 / 重试 / 限流 / 日志
+  providers/
+    claude.js            # Anthropic API 适配器
+    codex.js             # Codex CLI 适配器
 ```
 
 ---
