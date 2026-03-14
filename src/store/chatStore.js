@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { streamClaudeCode } from '../agents/claudeCodeAgent'
-import { streamCodex } from '../agents/codexAgent'
+import { streamProvider } from '../agents/gatewayAgent'
 
 const newId = () => crypto.randomUUID()
 const newConvId = () => crypto.randomUUID()
@@ -197,9 +196,7 @@ export function useChatStore(agents = []) {
             setSessionStatus(convId, agentId, 'ERROR')
           },
         }
-        const ctrl = cfg.provider === 'codex'
-          ? streamCodex({ messages: history, model: cfg.modelId, ...handlers })
-          : streamClaudeCode({ messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
+        const ctrl = streamProvider({ provider: cfg.provider, messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
         abortRefs.current[msgId] = ctrl
       })
     }, 0)
@@ -310,9 +307,7 @@ export function useChatStore(agents = []) {
           },
         }
 
-        const ctrl = cfg.provider === 'codex'
-          ? streamCodex({ messages: history, model: cfg.modelId, ...handlers })
-          : streamClaudeCode({ messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
+        const ctrl = streamProvider({ provider: cfg.provider, messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
 
         abortRefs.current[msgId] = ctrl
       })

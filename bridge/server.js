@@ -2,12 +2,51 @@ import express from 'express'
 import cors from 'cors'
 import { spawn } from 'child_process'
 import { existsSync } from 'fs'
+import { randomBytes } from 'crypto'
 import Redis from 'ioredis'
 import Anthropic from '@anthropic-ai/sdk'
+import { registerGateway } from './gateway.js'
+
+// 启动时生成一次性本地 token，仅限 localhost 客户端获取
+const LOCAL_TOKEN = randomBytes(32).toString('hex')
+
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:4173',
+]
 
 const app = express()
-app.use(cors())
+app.use(cors({
+  origin: (origin, cb) => {
+    // 允许无 origin（curl/本地直连）或白名单内的 localhost origin
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true)
+    cb(new Error(`CORS: origin ${origin} not allowed`))
+  },
+  credentials: true,
+}))
 app.use(express.json())
+
+// GET /token — 仅限 localhost 获取本地 token（供前端初始化时调用）
+app.get('/token', (req, res) => {
+  const host = req.hostname
+  if (host !== 'localhost' && host !== '127.0.0.1') {
+    res.status(403).json({ message: 'Forbidden' })
+    return
+  }
+  res.json({ token: LOCAL_TOKEN })
+})
+
+// provider 路由鉴权中间件
+function requireLocalToken(req, res, next) {
+  const token = req.headers['x-local-token']
+  if (token !== LOCAL_TOKEN) {
+    res.status(401).json({ message: 'Unauthorized: missing or invalid x-local-token' })
+    return
+  }
+  next()
+}
 
 const redis = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379')
 const CONV_KEY = 'cat-cafe:conversations'
@@ -60,8 +99,8 @@ app.put('/agents', async (req, res) => {
   }
 })
 
-// POST /claude/stream — Claude 流式代理，API Key 只在 bridge 侧读取，upstream 固定不接受客户端传入
-app.post('/claude/stream', async (req, res) => {
+// POST /claude/stream — 旧路由保留向后兼容，已加 token 鉴权
+app.post('/claude/stream', requireLocalToken, async (req, res) => {
   const { messages = [], model, systemPrompt } = req.body
   const apiKey = process.env.CLAUDE_API_KEY
   if (!apiKey) {
@@ -113,12 +152,8 @@ app.post('/claude/stream', async (req, res) => {
 const CODEX_EXE = process.env.CODEX_EXE_PATH ||
   'C:\\Users\\Administrator\\AppData\\Roaming\\JetBrains\\WebStorm2024.2\\node\\versions\\23.0.0\\node_modules\\@openai\\codex\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\codex\\codex.exe'
 
-/**
- * POST /codex/stream
- * body: { messages: [{role, content}], model? }
- * 返回 SSE 流，每条 data 为 { text } 或 { usage } 或 { error }
- */
-app.post('/codex/stream', (req, res) => {
+// POST /codex/stream — 旧路由保留向后兼容，已加 token 鉴权
+app.post('/codex/stream', requireLocalToken, (req, res) => {
   const { messages = [], model } = req.body
 
   if (!existsSync(CODEX_EXE)) {
@@ -207,6 +242,8 @@ app.post('/codex/stream', (req, res) => {
     if (!child.killed) child.kill()
   })
 })
+
+registerGateway(app, requireLocalToken)
 
 app.listen(4891, () => {
   console.log('[bridge] Codex bridge running on http://localhost:4891')
