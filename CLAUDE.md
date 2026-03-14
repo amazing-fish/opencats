@@ -55,11 +55,10 @@
   gateway policy 层（timeout / retry / concurrency / logging）✓
 
 下一步
-  gateway policy 进一步完善（per-provider 策略差异、usage/cost 统计 hook）
   Agent 工作目录隔离（每会话独立 cwd）
+  消息导出（Markdown/JSON）
 
 未来
-  消息导出（Markdown/JSON）
   Agent 自定义 system prompt
   Codex 原生多轮 API 支持
 ```
