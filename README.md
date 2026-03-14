@@ -28,7 +28,7 @@
 
 | # | 问题 |
 |---|------|
-| P1-5 | issue #9 gateway policy 后续：usage 统计 hook、per-provider 限流 |
+| P1-5 | gateway policy 扩展：usage/cost 统计 hook、per-provider 限流策略 |
 
 ---
 
