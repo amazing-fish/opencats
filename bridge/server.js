@@ -79,7 +79,7 @@ app.get('/agents', async (req, res) => {
   try {
     const data = await redis.get(AGENTS_KEY)
     const agents = data ? JSON.parse(data) : []
-    const safe = agents.map(({ apiKey, ...rest }) => rest)
+    const safe = agents.map(({ apiKey, baseUrl, ...rest }) => rest)
     res.json(safe)
   } catch (err) {
     console.error('[redis] get agents error:', err.message)
@@ -90,7 +90,7 @@ app.get('/agents', async (req, res) => {
 // PUT /agents — 保存自定义 agents（过滤敏感字段）
 app.put('/agents', async (req, res) => {
   try {
-    const safe = (Array.isArray(req.body) ? req.body : []).map(({ apiKey, ...rest }) => rest)
+    const safe = (Array.isArray(req.body) ? req.body : []).map(({ apiKey, baseUrl, ...rest }) => rest)
     await redis.set(AGENTS_KEY, JSON.stringify(safe))
     res.json({ ok: true })
   } catch (err) {
