@@ -141,6 +141,11 @@ PR status guidance:
 
 Codex reviewing a ClaudeCode PR must classify findings into one of 3 buckets:
 
+Before patching any review finding, ClaudeCode must:
+1. State the classification (A/B/C below)
+2. Restate the technical invariant being protected (e.g. "activeRequests must always decrement on every exit path")
+3. Check all related exit paths / call sites for the same class of defect before writing any code
+
 ### A. In-scope and small
 Examples:
 - edge case missed
@@ -246,10 +251,22 @@ Minimum expectation:
 - run lint / typecheck if configured
 - include exact validation commands in the PR description
 
+For async stream / generator subsystems, explicitly trace all exit paths before patching:
+- normal completion
+- timeout
+- yielded error event
+- thrown error
+- client abort
+
 If tests cannot run:
 - say so explicitly
 - explain why
 - provide best-effort manual verification steps
+
+When debugging intertwined failure modes in one subsystem:
+- model all exit paths first with hypothesis logs
+- identify the shared root cause before writing any patch
+- do not patch one exit path in isolation if others share the same invariant
 
 ---
 
@@ -269,13 +286,14 @@ Do not:
 ## 13. Preferred collaboration pattern
 
 Default pattern:
-1. ClaudeCode implements from issue on a feature/fix branch
-2. PR opened to GitHub
-3. Codex reviews the PR
-4. Findings are classified as in-scope small / in-scope risky / out-of-scope
-5. ClaudeCode fixes small in-scope findings on same branch
-6. Larger or out-of-scope findings become follow-up issues / PRs
-7. Human decides merge timing and scope boundaries
+1. For cross-layer changes (UI model, bridge API, Redis schema, docs), write a short design doc listing explicit invariants and "not allowed" fields before touching code
+2. ClaudeCode implements from issue on a feature/fix branch
+3. PR opened to GitHub
+4. Codex reviews the PR
+5. Findings are classified as in-scope small / in-scope risky / out-of-scope
+6. ClaudeCode fixes small in-scope findings on same branch
+7. Larger or out-of-scope findings become follow-up issues / PRs
+8. Human decides merge timing and scope boundaries
 
 ---
 
@@ -287,5 +305,6 @@ A PR is ready to merge only if:
 - tests/docs are updated as needed
 - risks are documented
 - no unresolved scope ambiguity remains
+- for stream/async subsystems: all exit paths (normal, timeout, yielded error, thrown error, client abort) have been explicitly verified
 
 Correct and small beats clever and sprawling.
