@@ -44,7 +44,7 @@ function escapeRegExp(s) {
 }
 
 function stripMentions(text, agents = []) {
-  return agents.reduce((t, a) => t.replace(new RegExp(`@${escapeRegExp(a.name)}(?=\\s|$)`, 'g'), ''), text).trim()
+  return agents.reduce((t, a) => t.replace(new RegExp(`@${escapeRegExp(a.name)}(?=[^a-zA-Z0-9\\u4e00-\\u9fa5_]|$)`, 'g'), ''), text).trim()
 }
 
 function buildMeta(modelLabel, usage) {
