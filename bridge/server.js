@@ -82,11 +82,22 @@ app.get('/agents', requireLocalToken, async (req, res) => {
   }
 })
 
-// PUT /agents — 保存自定义 agents（过滤敏感字段）
+// PUT /agents — 保存自定义 agents（保留 apiKey/baseUrl 在 Redis，不回传前端）
+// 前端不携带 apiKey/baseUrl，PUT 时从 Redis 已有记录 merge，防止覆盖丢失
 app.put('/agents', requireLocalToken, async (req, res) => {
   try {
-    const safe = (Array.isArray(req.body) ? req.body : []).map(({ apiKey, baseUrl, ...rest }) => rest)
-    await redis.set(AGENTS_KEY, JSON.stringify(safe))
+    const incoming = Array.isArray(req.body) ? req.body : []
+    const existing = await redis.get(AGENTS_KEY)
+    const existingMap = {}
+    if (existing) {
+      for (const a of JSON.parse(existing)) existingMap[a.id] = a
+    }
+    const merged = incoming.map(a => ({
+      ...a,
+      apiKey: a.apiKey ?? existingMap[a.id]?.apiKey,
+      baseUrl: a.baseUrl ?? existingMap[a.id]?.baseUrl,
+    }))
+    await redis.set(AGENTS_KEY, JSON.stringify(merged))
     res.json({ ok: true })
   } catch (err) {
     console.error('[redis] set agents error:', err.message)
@@ -238,7 +249,7 @@ app.post('/codex/stream', requireLocalToken, (req, res) => {
   })
 })
 
-registerGateway(app, requireLocalToken)
+registerGateway(app, requireLocalToken, redis, AGENTS_KEY)
 
 // 同时绑定 IPv4 和 IPv6 loopback，避免 localhost 在 IPv6-first 环境解析到 ::1 时连接失败
 const PORT = 4891

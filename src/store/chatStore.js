@@ -196,7 +196,7 @@ export function useChatStore(agents = []) {
             setSessionStatus(convId, agentId, 'ERROR')
           },
         }
-        const ctrl = streamProvider({ provider: cfg.provider, messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
+        const ctrl = streamProvider({ provider: cfg.provider, messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, agentId: agentId, ...handlers })
         abortRefs.current[msgId] = ctrl
       })
     }, 0)
@@ -307,7 +307,7 @@ export function useChatStore(agents = []) {
           },
         }
 
-        const ctrl = streamProvider({ provider: cfg.provider, messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, ...handlers })
+        const ctrl = streamProvider({ provider: cfg.provider, messages: history, model: cfg.modelId, systemPrompt: cfg.systemPrompt, agentId: agentId, ...handlers })
 
         abortRefs.current[msgId] = ctrl
       })

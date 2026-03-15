@@ -51,7 +51,7 @@ export async function fetchWithToken(url, options = {}) {
  * @param {function} onError - (err) => void
  * @returns {AbortController}
  */
-export function streamProvider({ provider, messages, model, systemPrompt, onChunk, onDone, onError }) {
+export function streamProvider({ provider, messages, model, systemPrompt, agentId, onChunk, onDone, onError }) {
   const controller = new AbortController()
 
   const run = async () => {
@@ -59,6 +59,7 @@ export function streamProvider({ provider, messages, model, systemPrompt, onChun
       const token = await getToken()
       const body = { provider, messages, model }
       if (systemPrompt) body.systemPrompt = systemPrompt
+      if (agentId) body.agentId = agentId
 
       const res = await fetch(`${BRIDGE}/gateway/stream`, {
         method: 'POST',
