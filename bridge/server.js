@@ -82,11 +82,11 @@ app.get('/agents', requireLocalToken, async (req, res) => {
   }
 })
 
-// PUT /agents — 保存自定义 agents（过滤敏感字段）
+// PUT /agents — 保存自定义 agents（保留 apiKey/baseUrl 在 Redis，不回传前端）
 app.put('/agents', requireLocalToken, async (req, res) => {
   try {
-    const safe = (Array.isArray(req.body) ? req.body : []).map(({ apiKey, baseUrl, ...rest }) => rest)
-    await redis.set(AGENTS_KEY, JSON.stringify(safe))
+    const agents = Array.isArray(req.body) ? req.body : []
+    await redis.set(AGENTS_KEY, JSON.stringify(agents))
     res.json({ ok: true })
   } catch (err) {
     console.error('[redis] set agents error:', err.message)
@@ -238,7 +238,7 @@ app.post('/codex/stream', requireLocalToken, (req, res) => {
   })
 })
 
-registerGateway(app, requireLocalToken)
+registerGateway(app, requireLocalToken, redis, AGENTS_KEY)
 
 // 同时绑定 IPv4 和 IPv6 loopback，避免 localhost 在 IPv6-first 环境解析到 ::1 时连接失败
 const PORT = 4891

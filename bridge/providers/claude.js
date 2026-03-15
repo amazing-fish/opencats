@@ -1,6 +1,6 @@
 /**
  * Claude provider adapter
- * 输入: { messages, model, systemPrompt }
+ * 输入: { messages, model, systemPrompt, apiKey?, baseUrl? }
  * 输出: async generator，yield { type, ... }
  */
 import Anthropic from '@anthropic-ai/sdk'
@@ -11,13 +11,16 @@ export function isAvailable() {
   return !!process.env.CLAUDE_API_KEY
 }
 
-export async function* stream({ messages, model = 'claude-sonnet-4-6', systemPrompt, signal }) {
-  if (!isAvailable()) {
+export async function* stream({ messages, model = 'claude-sonnet-4-6', systemPrompt, signal, apiKey, baseUrl }) {
+  const resolvedKey = apiKey || process.env.CLAUDE_API_KEY
+  if (!resolvedKey) {
     yield { type: 'error', message: 'CLAUDE_API_KEY not set in bridge environment' }
     return
   }
 
-  const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
+  const clientOpts = { apiKey: resolvedKey }
+  if (baseUrl) clientOpts.baseURL = baseUrl
+  const client = new Anthropic(clientOpts)
 
   const params = { model, max_tokens: 8096, messages }
   if (systemPrompt) params.system = systemPrompt

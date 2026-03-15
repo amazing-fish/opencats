@@ -5,7 +5,7 @@ import CatIcon from './CatIcon'
 
 function AgentForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial || {
-    name: '', provider: 'claudecode', modelId: '', systemPrompt: '',
+    name: '', provider: 'claudecode', modelId: '', systemPrompt: '', baseUrl: '', apiKey: '',
   })
   const [error, setError] = useState('')
   const set = (k, v) => { setError(''); setForm(f => ({ ...f, [k]: v })) }
@@ -47,6 +47,25 @@ function AgentForm({ initial, onSave, onCancel }) {
             value={form.modelId}
             onChange={e => set('modelId', e.target.value)}
             placeholder="如: claude-sonnet-4-6"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D87C65]"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Base URL <span className="text-gray-300">（可选）</span></label>
+          <input
+            value={form.baseUrl}
+            onChange={e => set('baseUrl', e.target.value)}
+            placeholder="如: https://api.example.com"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D87C65]"
+          />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs text-gray-500 mb-1 block">API Key <span className="text-gray-300">（可选，留空使用 bridge 默认）</span></label>
+          <input
+            type="password"
+            value={form.apiKey}
+            onChange={e => set('apiKey', e.target.value)}
+            placeholder="sk-..."
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D87C65]"
           />
         </div>
