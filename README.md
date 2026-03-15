@@ -6,7 +6,7 @@
 
 ## 一句话定位
 
-把多个智能体像小型研发团队一样协作落到工程现实：**可接入主流模型供应商、可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。
+把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，自定义后端连接（baseUrl / apiKey）尚未支持（见 issue #17）。
 
 ---
 
@@ -19,7 +19,7 @@
 | 多 Agent 并发对话 | 同一条消息同时发给多个 AI，并排流式展示回复 |
 | @mention 路由 | AI 回复中 `@name` 自动触发目标 Agent 响应，支持链式协作 |
 | 会话持久化 | Redis 存储全量会话，刷新不丢失，UUID 防冲突 |
-| 自定义 Agent | 可配置任意 Claude / Codex 模型、system prompt |
+| 自定义 Agent | 可配置 bridge 内置 provider（Claude / Codex）的模型 ID 和 system prompt；自定义后端连接暂不支持（见 issue #17） |
 | 流式输出 + 停止 | 实时显示 token，支持随时中断所有 Agent |
 | Token 统计 | 每条回复显示 input/output token 用量 |
 | Bridge 中转 | 前端不直连 AI API，全部经由本地 Express bridge |
@@ -28,7 +28,10 @@
 
 | # | 问题 |
 |---|------|
-| P1-5 | gateway policy 扩展：usage/cost 统计 hook、per-provider 限流策略 |
+| #14 | bridge 绑定所有接口，local token 可被 LAN 客户端通过 Host 头绕过 |
+| #15 | `/conversations` / `/agents` 数据路由无鉴权，任意可达客户端可读写 |
+| #17 | 自定义 Agent 无法配置 baseUrl / apiKey，无法连接非默认后端 |
+| #18 | bridge 不可用时前端仅显示通用 Failed to fetch，无明确错误提示 |
 
 ---
 

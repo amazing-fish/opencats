@@ -51,10 +51,11 @@
 ```
 当前（MVP）
   多 Agent 并发对话 ✓ / Redis 持久化 ✓ / 停止切换会话 ✓
-  统一 provider gateway ✓ / bridge-only auth ✓ / CORS + token 鉴权 ✓
+  统一 provider gateway ✓
   gateway policy 层（timeout / retry / concurrency / logging）✓
 
 下一步
+  bridge auth 加固（issue #14 loopback bind、issue #15 数据路由鉴权）
   Agent 工作目录隔离（每会话独立 cwd）
   消息导出（Markdown/JSON）
 
