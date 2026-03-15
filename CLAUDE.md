@@ -60,7 +60,7 @@
   统一 provider gateway ✓
   gateway policy 层（timeout / retry / concurrency / logging）✓
   bridge auth 加固（loopback bind ✓、数据路由 token 鉴权 ✓）
-  per-agent 自定义后端连接（baseUrl / apiKey）✓
+  per-agent 自定义后端连接（baseUrl / apiKey，仅 Claude-compatible provider）✓
   bridge 不可用错误提示 + 重试 ✓
   @mention token 不泄漏进 provider prompt ✓
 
