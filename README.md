@@ -29,7 +29,6 @@
 | # | 问题 |
 |---|------|
 | #16 | @mention 链式调用无循环保护，可能无限触发 |
-| #23 | @mention 路由 token 泄漏进 provider prompt |
 
 ---
 
