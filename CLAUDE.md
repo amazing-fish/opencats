@@ -21,7 +21,7 @@
 
 ## 不可漂移的红线
 
-1. **API Key 永远不进前端 bundle** — Claude/OpenAI key 只在 bridge `process.env` 中读取
+1. **API Key 永远不进前端 bundle** — Claude/OpenAI key 只在 bridge `process.env` 或 Redis（per-agent apiKey）中读取；`GET /agents` 永远 strip `apiKey` 字段，不回传前端
 2. **会话 ID 永远用 `crypto.randomUUID()`** — 禁止自增整数，刷新后会冲突
 3. **Redis 写入必须防抖** — 不在 streaming chunk 期间逐次写，至少 500ms 防抖或仅在 `onDone`/`stopAll` 时写
 4. **bridge 是唯一外部通信出口** — 前端只 fetch `localhost:4891`
@@ -45,6 +45,12 @@
 | P1-3 | streaming 期间频繁写 Redis | ✅ 已修复（600ms 防抖，conversations 变化时写） |
 | P1-4 | sendMessage 闭包快照导致历史丢失 | ✅ 已修复（activeIdRef 同步读取） |
 | P1-5 | codex bridge 丢弃多轮上下文 | ✅ 已修复（历史拼接） |
+| #14 | bridge 绑定所有接口，local token 可被 LAN 绕过 | ✅ 已修复（loopback bind） |
+| #15 | `/conversations` / `/agents` 无鉴权 | ✅ 已修复（local token auth） |
+| #17 | 自定义 Agent 无法配置 baseUrl / apiKey | ✅ 已修复（per-agent 后端连接支持） |
+| #18 | bridge 不可用时无明确错误提示 | ✅ 已修复（全屏错误横幅 + 重试） |
+| #23 | @mention token 泄漏进 provider prompt | ✅ 已修复（stripMentions） |
+| #16 | @mention 链式调用无循环保护 | 🔴 待修复 |
 
 ## 演进路径
 
@@ -53,14 +59,17 @@
   多 Agent 并发对话 ✓ / Redis 持久化 ✓ / 停止切换会话 ✓
   统一 provider gateway ✓
   gateway policy 层（timeout / retry / concurrency / logging）✓
+  bridge auth 加固（loopback bind ✓、数据路由 token 鉴权 ✓）
+  per-agent 自定义后端连接（baseUrl / apiKey）✓
+  bridge 不可用错误提示 + 重试 ✓
+  @mention token 不泄漏进 provider prompt ✓
 
 下一步
-  bridge auth 加固（issue #14 loopback bind、issue #15 数据路由鉴权）
+  @mention 链式调用循环保护（issue #16）
   Agent 工作目录隔离（每会话独立 cwd）
   消息导出（Markdown/JSON）
 
 未来
-  Agent 自定义 system prompt
   Codex 原生多轮 API 支持
 ```
 

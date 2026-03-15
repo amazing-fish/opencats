@@ -6,7 +6,7 @@
 
 ## 一句话定位
 
-把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，自定义后端连接（baseUrl / apiKey）尚未支持（见 issue #17）。
+把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，支持为每个自定义 Agent 配置独立的 baseUrl / apiKey。
 
 ---
 
@@ -19,7 +19,7 @@
 | 多 Agent 并发对话 | 同一条消息同时发给多个 AI，并排流式展示回复 |
 | @mention 路由 | AI 回复中 `@name` 自动触发目标 Agent 响应，支持链式协作 |
 | 会话持久化 | Redis 存储全量会话，刷新不丢失，UUID 防冲突 |
-| 自定义 Agent | 可配置 bridge 内置 provider（Claude / Codex）的模型 ID 和 system prompt；自定义后端连接暂不支持（见 issue #17） |
+| 自定义 Agent | 可配置 provider（Claude / Codex）的模型 ID、System Prompt、baseUrl 和 apiKey；apiKey 仅存 bridge Redis，不回传前端 |
 | 流式输出 + 停止 | 实时显示 token，支持随时中断所有 Agent |
 | Token 统计 | 每条回复显示 input/output token 用量 |
 | Bridge 中转 | 前端不直连 AI API，全部经由本地 Express bridge |
@@ -28,10 +28,8 @@
 
 | # | 问题 |
 |---|------|
-| #14 | bridge 绑定所有接口，local token 可被 LAN 客户端通过 Host 头绕过 |
-| #15 | `/conversations` / `/agents` 数据路由无鉴权，任意可达客户端可读写 |
-| #17 | 自定义 Agent 无法配置 baseUrl / apiKey，无法连接非默认后端 |
-| #18 | bridge 不可用时前端仅显示通用 Failed to fetch，无明确错误提示 |
+| #16 | @mention 链式调用无循环保护，可能无限触发 |
+| #23 | @mention 路由 token 泄漏进 provider prompt |
 
 ---
 
@@ -51,9 +49,9 @@ bridge/server.js  (Express :4891)
 ```
 
 - 前端唯一状态源：`useChatStore` + `useAgentStore`（无 Zustand/Redux）
-- Bridge 是唯一外部通信出口，API Key 仅在 bridge `process.env` 中，不进前端 bundle
+- Bridge 是唯一外部通信出口，API Key 仅在 bridge `process.env` 或 Redis（per-agent）中，不进前端 bundle
 - 会话 ID 全部使用 `crypto.randomUUID()`
-- `/gateway/stream` 等 AI 路由受 local token 鉴权保护；`/conversations`、`/agents` 等数据路由依赖 CORS 白名单（localhost:5173/4173），无 token 校验
+- `/gateway/stream` 等 AI 路由及 `/conversations`、`/agents` 数据路由均受 local token 鉴权保护
 
 ---
 
@@ -109,7 +107,7 @@ npm run dev
 | 布偶猫 | claude-sonnet-4-6 | Anthropic API |
 | 缅因猫 | gpt-5.4 | Codex CLI（本地） |
 
-在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。API Key 统一在 bridge `.env` 中配置，不在 UI 中暴露。
+在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt、Base URL（可选）、API Key（可选）。API Key 仅存 bridge Redis，不回传前端，留空则使用 bridge `.env` 中的默认 Key。
 
 ---
 
