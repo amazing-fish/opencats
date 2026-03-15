@@ -39,6 +39,10 @@ function parseMentions(text, agents = []) {
     .map(a => a.id)
 }
 
+function stripMentions(text, agents = []) {
+  return agents.reduce((t, a) => t.replace(new RegExp(`@${a.name}\\b`, 'g'), ''), text).trim()
+}
+
 function buildMeta(modelLabel, usage) {
   if (!usage) return modelLabel || ''
   return `${modelLabel || ''} · ${usage.input_tokens || 0}↑ ${usage.output_tokens || 0}↓`
@@ -153,7 +157,7 @@ export function useChatStore(agents = []) {
       history = mergeHistory(conv.messages
         .filter(m => m.role === 'user' || m.role === 'assistant')
         .slice(-10)
-        .map(m => ({ role: m.role, content: m.role === 'assistant' && m.name ? `[${m.name}]: ${m.content}` : m.content })))
+        .map(m => ({ role: m.role, content: m.role === 'assistant' && m.name ? `[${m.name}]: ${m.content}` : stripMentions(m.content, agentsRef.current) })))
       return prev.map(c => c.id !== convId ? c : {
         ...c,
         agents: [...c.agents, ...newAgents],
@@ -249,7 +253,7 @@ export function useChatStore(agents = []) {
         .slice(-10)
         .map(m => ({
           role: m.role,
-          content: m.role === 'assistant' && m.name ? `[${m.name}]: ${m.content}` : m.content,
+          content: m.role === 'assistant' && m.name ? `[${m.name}]: ${m.content}` : stripMentions(m.content, agentsRef.current),
         })))
 
       const firstMsg = currentConv.messages.length === 0
