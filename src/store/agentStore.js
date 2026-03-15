@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { fetchWithToken } from '../agents/gatewayAgent'
 
 const BRIDGE = import.meta.env.VITE_CODEX_BRIDGE_URL || 'http://localhost:4891'
 const AGENTS_KEY = 'cat-cafe:agents'
@@ -51,7 +52,7 @@ export function useAgentStore() {
   const isLoaded = { current: false }
 
   useEffect(() => {
-    fetch(`${BRIDGE}/agents`)
+    fetchWithToken(`${BRIDGE}/agents`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -59,7 +60,7 @@ export function useAgentStore() {
         } else {
           // 首次加载：写入默认 agents
           setAgents(BUILTIN_AGENTS)
-          fetch(`${BRIDGE}/agents`, {
+          fetchWithToken(`${BRIDGE}/agents`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(BUILTIN_AGENTS),
@@ -71,7 +72,7 @@ export function useAgentStore() {
   }, [])
 
   const saveAgents = useCallback((list) => {
-    fetch(`${BRIDGE}/agents`, {
+    fetchWithToken(`${BRIDGE}/agents`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(list),

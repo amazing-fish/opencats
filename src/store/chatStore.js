@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { streamProvider } from '../agents/gatewayAgent'
+import { streamProvider, fetchWithToken } from '../agents/gatewayAgent'
 
 const newId = () => crypto.randomUUID()
 const newConvId = () => crypto.randomUUID()
@@ -70,7 +70,7 @@ export function useChatStore(agents = []) {
 
   const isLoaded = useRef(false)
   useEffect(() => {
-    fetch(`${BRIDGE}/conversations`)
+    fetchWithToken(`${BRIDGE}/conversations`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -87,7 +87,7 @@ export function useChatStore(agents = []) {
     if (!isLoaded.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
-      fetch(`${BRIDGE}/conversations`, {
+      fetchWithToken(`${BRIDGE}/conversations`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(conversations),

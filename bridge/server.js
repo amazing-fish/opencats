@@ -28,13 +28,8 @@ app.use(cors({
 }))
 app.use(express.json())
 
-// GET /token — 仅限 localhost 获取本地 token（供前端初始化时调用）
+// GET /token — 返回本地 token（bridge 已绑定 127.0.0.1，物理上只有 loopback 可达）
 app.get('/token', (req, res) => {
-  const host = req.hostname
-  if (host !== 'localhost' && host !== '127.0.0.1') {
-    res.status(403).json({ message: 'Forbidden' })
-    return
-  }
   res.json({ token: LOCAL_TOKEN })
 })
 
@@ -53,7 +48,7 @@ const CONV_KEY = 'cat-cafe:conversations'
 const AGENTS_KEY = 'cat-cafe:agents'
 
 // GET /conversations — 读取所有会话
-app.get('/conversations', async (req, res) => {
+app.get('/conversations', requireLocalToken, async (req, res) => {
   try {
     const data = await redis.get(CONV_KEY)
     res.json(data ? JSON.parse(data) : [])
@@ -64,7 +59,7 @@ app.get('/conversations', async (req, res) => {
 })
 
 // PUT /conversations — 覆盖保存所有会话
-app.put('/conversations', async (req, res) => {
+app.put('/conversations', requireLocalToken, async (req, res) => {
   try {
     await redis.set(CONV_KEY, JSON.stringify(req.body))
     res.json({ ok: true })
@@ -75,7 +70,7 @@ app.put('/conversations', async (req, res) => {
 })
 
 // GET /agents — 读取自定义 agents（过滤敏感字段）
-app.get('/agents', async (req, res) => {
+app.get('/agents', requireLocalToken, async (req, res) => {
   try {
     const data = await redis.get(AGENTS_KEY)
     const agents = data ? JSON.parse(data) : []
@@ -88,7 +83,7 @@ app.get('/agents', async (req, res) => {
 })
 
 // PUT /agents — 保存自定义 agents（过滤敏感字段）
-app.put('/agents', async (req, res) => {
+app.put('/agents', requireLocalToken, async (req, res) => {
   try {
     const safe = (Array.isArray(req.body) ? req.body : []).map(({ apiKey, baseUrl, ...rest }) => rest)
     await redis.set(AGENTS_KEY, JSON.stringify(safe))
@@ -245,6 +240,14 @@ app.post('/codex/stream', requireLocalToken, (req, res) => {
 
 registerGateway(app, requireLocalToken)
 
-app.listen(4891, () => {
-  console.log('[bridge] Codex bridge running on http://localhost:4891')
+// 同时绑定 IPv4 和 IPv6 loopback，避免 localhost 在 IPv6-first 环境解析到 ::1 时连接失败
+const PORT = 4891
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`[bridge] listening on http://127.0.0.1:${PORT}`)
+})
+app.listen(PORT, '::1', () => {
+  console.log(`[bridge] listening on http://[::1]:${PORT}`)
+}).on('error', (err) => {
+  // IPv6 不可用时静默忽略（部分 Windows 环境禁用 IPv6）
+  if (err.code !== 'EADDRNOTAVAIL') console.error('[bridge] IPv6 listen error:', err.message)
 })
