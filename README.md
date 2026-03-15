@@ -6,7 +6,7 @@
 
 ## 一句话定位
 
-把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，支持为每个自定义 Agent 配置独立的 baseUrl / apiKey。
+把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，Claude-compatible backend 支持为每个自定义 Agent 配置独立的 baseUrl / apiKey；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
 
 ---
 
@@ -19,7 +19,7 @@
 | 多 Agent 并发对话 | 同一条消息同时发给多个 AI，并排流式展示回复 |
 | @mention 路由 | AI 回复中 `@name` 自动触发目标 Agent 响应，支持链式协作 |
 | 会话持久化 | Redis 存储全量会话，刷新不丢失，UUID 防冲突 |
-| 自定义 Agent | 可配置 provider（Claude / Codex）的模型 ID、System Prompt、baseUrl 和 apiKey；apiKey 仅存 bridge Redis，不回传前端 |
+| 自定义 Agent | 可配置模型 ID、System Prompt；Claude provider 额外支持 baseUrl / apiKey（仅存 bridge Redis，不回传前端）；Codex provider 通过本地 CLI 调用，不支持自定义凭据 |
 | 流式输出 + 停止 | 实时显示 token，支持随时中断所有 Agent |
 | Token 统计 | 每条回复显示 input/output token 用量 |
 | Bridge 中转 | 前端不直连 AI API，全部经由本地 Express bridge |
