@@ -83,10 +83,21 @@ app.get('/agents', requireLocalToken, async (req, res) => {
 })
 
 // PUT /agents — 保存自定义 agents（保留 apiKey/baseUrl 在 Redis，不回传前端）
+// 前端不携带 apiKey/baseUrl，PUT 时从 Redis 已有记录 merge，防止覆盖丢失
 app.put('/agents', requireLocalToken, async (req, res) => {
   try {
-    const agents = Array.isArray(req.body) ? req.body : []
-    await redis.set(AGENTS_KEY, JSON.stringify(agents))
+    const incoming = Array.isArray(req.body) ? req.body : []
+    const existing = await redis.get(AGENTS_KEY)
+    const existingMap = {}
+    if (existing) {
+      for (const a of JSON.parse(existing)) existingMap[a.id] = a
+    }
+    const merged = incoming.map(a => ({
+      ...a,
+      apiKey: a.apiKey ?? existingMap[a.id]?.apiKey,
+      baseUrl: a.baseUrl ?? existingMap[a.id]?.baseUrl,
+    }))
+    await redis.set(AGENTS_KEY, JSON.stringify(merged))
     res.json({ ok: true })
   } catch (err) {
     console.error('[redis] set agents error:', err.message)
