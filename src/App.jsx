@@ -11,7 +11,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [activePage, setActivePage] = useState('chat') // 'chat' | 'catnest'
 
-  const { agents, createAgent, updateAgent, deleteAgent } = useAgentStore()
+  const { agents, bridgeError, createAgent, updateAgent, deleteAgent } = useAgentStore()
 
   const {
     conversations, activeId, messages, sessions,
@@ -31,6 +31,15 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-full bg-white text-[#333333] font-sans overflow-hidden">
+      {bridgeError && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full mx-4 space-y-3">
+            <div className="text-red-500 font-semibold text-base">Bridge 不可用</div>
+            <div className="text-sm text-gray-600">{bridgeError}</div>
+            <div className="text-xs text-gray-400">请确认已运行 <code className="bg-gray-100 px-1 rounded">npm run dev</code> 并且 bridge 正常启动。</div>
+          </div>
+        </div>
+      )}
       <Sidebar
         conversations={conversations}
         activeId={activeId}

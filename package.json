@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n bridge,vite -c cyan,green \"node bridge/server.js\" \"vite\"",
+    "dev": "concurrently --kill-others-on-fail -n bridge,vite -c cyan,green \"node bridge/server.js\" \"vite\"",
     "build": "vite build",
     "preview": "vite preview"
   },

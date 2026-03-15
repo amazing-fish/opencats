@@ -49,6 +49,7 @@ export function pickColors(idx) {
 
 export function useAgentStore() {
   const [agents, setAgents] = useState(BUILTIN_AGENTS)
+  const [bridgeError, setBridgeError] = useState(null)
   const isLoaded = { current: false }
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export function useAgentStore() {
           }).catch(() => {})
         }
       })
-      .catch(() => {})
+      .catch(err => setBridgeError(err.message))
       .finally(() => { isLoaded.current = true })
   }, [])
 
@@ -112,5 +113,5 @@ export function useAgentStore() {
     })
   }, [saveAgents])
 
-  return { agents, createAgent, updateAgent, deleteAgent }
+  return { agents, bridgeError, createAgent, updateAgent, deleteAgent }
 }
