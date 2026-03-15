@@ -39,8 +39,12 @@ function parseMentions(text, agents = []) {
     .map(a => a.id)
 }
 
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function stripMentions(text, agents = []) {
-  return agents.reduce((t, a) => t.replace(new RegExp(`@${a.name}(?=\\s|$)`, 'g'), ''), text).trim()
+  return agents.reduce((t, a) => t.replace(new RegExp(`@${escapeRegExp(a.name)}(?=\\s|$)`, 'g'), ''), text).trim()
 }
 
 function buildMeta(modelLabel, usage) {
@@ -243,7 +247,7 @@ export function useChatStore(agents = []) {
       if (!currentConv) {
         const conv = makeConversation(activeAgents)
         resolvedConvId = conv.id
-        history = [{ role: 'user', content: userText }]
+        history = [{ role: 'user', content: stripMentions(userText, agentsRef.current) }]
         return [{ ...conv, label: userText.slice(0, 20), messages: [userMsg, ...agentMsgs] }, ...prev]
       }
 
