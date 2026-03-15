@@ -8,7 +8,7 @@ const BRIDGE = import.meta.env.VITE_CODEX_BRIDGE_URL || 'http://localhost:4891'
 
 // 启动时从 bridge 获取本地 token，后续所有请求携带
 let localToken = null
-async function getToken() {
+export async function getToken() {
   if (localToken) return localToken
   try {
     const res = await fetch(`${BRIDGE}/token`)
