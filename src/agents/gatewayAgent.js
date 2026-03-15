@@ -7,6 +7,7 @@
 const BRIDGE = import.meta.env.VITE_CODEX_BRIDGE_URL || 'http://localhost:4891'
 
 // 启动时从 bridge 获取本地 token，后续所有请求携带
+// bridge 重启后 token 会变化，调用方收到 401 时应调用 refreshToken() 后重试
 let localToken = null
 export async function getToken() {
   if (localToken) return localToken
@@ -18,6 +19,26 @@ export async function getToken() {
     console.error('[gateway] failed to fetch local token')
   }
   return localToken
+}
+
+export function refreshToken() {
+  localToken = null
+}
+
+/**
+ * 带 token 的 fetch，收到 401 时自动 refresh token 并重试一次
+ */
+export async function fetchWithToken(url, options = {}) {
+  const token = await getToken()
+  const headers = { ...options.headers, ...(token ? { 'x-local-token': token } : {}) }
+  const res = await fetch(url, { ...options, headers })
+  if (res.status === 401) {
+    refreshToken()
+    const newToken = await getToken()
+    const retryHeaders = { ...options.headers, ...(newToken ? { 'x-local-token': newToken } : {}) }
+    return fetch(url, { ...options, headers: retryHeaders })
+  }
+  return res
 }
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { streamProvider, getToken } from '../agents/gatewayAgent'
+import { streamProvider, fetchWithToken } from '../agents/gatewayAgent'
 
 const newId = () => crypto.randomUUID()
 const newConvId = () => crypto.randomUUID()
@@ -70,11 +70,7 @@ export function useChatStore(agents = []) {
 
   const isLoaded = useRef(false)
   useEffect(() => {
-    getToken().then(token =>
-      fetch(`${BRIDGE}/conversations`, {
-        headers: token ? { 'x-local-token': token } : {},
-      })
-    )
+    fetchWithToken(`${BRIDGE}/conversations`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -90,14 +86,10 @@ export function useChatStore(agents = []) {
   useEffect(() => {
     if (!isLoaded.current) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(async () => {
-      const token = await getToken()
-      fetch(`${BRIDGE}/conversations`, {
+    saveTimerRef.current = setTimeout(() => {
+      fetchWithToken(`${BRIDGE}/conversations`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'x-local-token': token } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(conversations),
       }).catch(err => console.warn('[store] save conversations failed:', err.message))
     }, 600)

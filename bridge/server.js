@@ -240,6 +240,14 @@ app.post('/codex/stream', requireLocalToken, (req, res) => {
 
 registerGateway(app, requireLocalToken)
 
-app.listen(4891, '127.0.0.1', () => {
-  console.log('[bridge] Codex bridge running on http://127.0.0.1:4891')
+// 同时绑定 IPv4 和 IPv6 loopback，避免 localhost 在 IPv6-first 环境解析到 ::1 时连接失败
+const PORT = 4891
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`[bridge] listening on http://127.0.0.1:${PORT}`)
+})
+app.listen(PORT, '::1', () => {
+  console.log(`[bridge] listening on http://[::1]:${PORT}`)
+}).on('error', (err) => {
+  // IPv6 不可用时静默忽略（部分 Windows 环境禁用 IPv6）
+  if (err.code !== 'EADDRNOTAVAIL') console.error('[bridge] IPv6 listen error:', err.message)
 })

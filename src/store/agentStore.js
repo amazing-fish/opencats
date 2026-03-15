@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { getToken } from '../agents/gatewayAgent'
+import { fetchWithToken } from '../agents/gatewayAgent'
 
 const BRIDGE = import.meta.env.VITE_CODEX_BRIDGE_URL || 'http://localhost:4891'
 const AGENTS_KEY = 'cat-cafe:agents'
@@ -52,11 +52,7 @@ export function useAgentStore() {
   const isLoaded = { current: false }
 
   useEffect(() => {
-    getToken().then(token =>
-      fetch(`${BRIDGE}/agents`, {
-        headers: token ? { 'x-local-token': token } : {},
-      })
-    )
+    fetchWithToken(`${BRIDGE}/agents`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -64,16 +60,11 @@ export function useAgentStore() {
         } else {
           // 首次加载：写入默认 agents
           setAgents(BUILTIN_AGENTS)
-          getToken().then(token =>
-            fetch(`${BRIDGE}/agents`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(token ? { 'x-local-token': token } : {}),
-              },
-              body: JSON.stringify(BUILTIN_AGENTS),
-            })
-          ).catch(() => {})
+          fetchWithToken(`${BRIDGE}/agents`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(BUILTIN_AGENTS),
+          }).catch(() => {})
         }
       })
       .catch(() => {})
@@ -81,16 +72,11 @@ export function useAgentStore() {
   }, [])
 
   const saveAgents = useCallback((list) => {
-    getToken().then(token =>
-      fetch(`${BRIDGE}/agents`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'x-local-token': token } : {}),
-        },
-        body: JSON.stringify(list),
-      })
-    ).catch(() => {})
+    fetchWithToken(`${BRIDGE}/agents`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(list),
+    }).catch(() => {})
   }, [])
 
   const createAgent = useCallback((data) => {
