@@ -16,7 +16,7 @@ export async function getToken() {
     const data = await res.json()
     localToken = data.token
   } catch {
-    console.error('[gateway] failed to fetch local token')
+    throw new Error(`bridge unavailable: cannot reach ${BRIDGE} — make sure the bridge is running`)
   }
   return localToken
 }

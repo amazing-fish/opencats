@@ -49,16 +49,17 @@ export function pickColors(idx) {
 
 export function useAgentStore() {
   const [agents, setAgents] = useState(BUILTIN_AGENTS)
+  const [bridgeError, setBridgeError] = useState(null)
   const isLoaded = { current: false }
 
-  useEffect(() => {
+  const loadAgents = () => {
+    setBridgeError(null)
     fetchWithToken(`${BRIDGE}/agents`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setAgents(data)
         } else {
-          // 首次加载：写入默认 agents
           setAgents(BUILTIN_AGENTS)
           fetchWithToken(`${BRIDGE}/agents`, {
             method: 'PUT',
@@ -67,9 +68,11 @@ export function useAgentStore() {
           }).catch(() => {})
         }
       })
-      .catch(() => {})
+      .catch(err => setBridgeError(err.message))
       .finally(() => { isLoaded.current = true })
-  }, [])
+  }
+
+  useEffect(() => { loadAgents() }, [])
 
   const saveAgents = useCallback((list) => {
     fetchWithToken(`${BRIDGE}/agents`, {
@@ -112,5 +115,5 @@ export function useAgentStore() {
     })
   }, [saveAgents])
 
-  return { agents, createAgent, updateAgent, deleteAgent }
+  return { agents, bridgeError, retryBridgeLoad: loadAgents, createAgent, updateAgent, deleteAgent }
 }
