@@ -16,7 +16,7 @@ export async function getToken() {
     const data = await res.json()
     localToken = data.token
   } catch {
-    throw new Error('bridge unavailable: cannot reach http://localhost:4891 — make sure the bridge is running (npm run dev)')
+    throw new Error(`bridge unavailable: cannot reach ${BRIDGE} — make sure the bridge is running`)
   }
   return localToken
 }
