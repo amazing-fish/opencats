@@ -54,10 +54,10 @@ export function UserMessage({ name, time, content }) {
     <div className="flex items-start justify-end w-full">
       <div className="mr-4 flex flex-col items-end w-full max-w-3xl">
         <div className="flex items-center space-x-2 mb-1.5">
-          <span className="text-xs text-gray-400">{time}</span>
-          <span className="text-sm font-medium text-gray-700">{name}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{time}</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{name}</span>
         </div>
-        <div className="bg-[#FDF3EB] text-[#4A3D36] text-[15px] px-5 py-4 rounded-2xl rounded-tr-sm shadow-sm leading-relaxed border border-[#FBE3D1]/50 inline-block text-left whitespace-pre-wrap">
+        <div className="bg-[#FDF3EB] dark:bg-orange-900/30 text-[#4A3D36] dark:text-orange-100 text-[15px] px-5 py-4 rounded-2xl rounded-tr-sm shadow-sm leading-relaxed border border-[#FBE3D1]/50 dark:border-orange-800/30 inline-block text-left whitespace-pre-wrap">
           {content}
         </div>
       </div>
