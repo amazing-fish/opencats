@@ -207,7 +207,7 @@ export function useChatStore(agents = []) {
   const lastConfirmedAt = useRef(0)
 
   const deleteConversation = useCallback((convId) => {
-    let fallbackId = null
+    const fallbackRef = { current: null }
     setConversations(prev => {
       const conv = prev.find(c => c.id === convId)
       if (conv) {
@@ -219,10 +219,10 @@ export function useChatStore(agents = []) {
         })
       }
       const next = prev.filter(c => c.id !== convId)
-      fallbackId = next.length > 0 ? next[0].id : null
+      fallbackRef.current = next.length > 0 ? next[0].id : null
       return next
     })
-    setActiveIdSynced(current => current === convId ? fallbackId : current)
+    setActiveIdSynced(current => current === convId ? fallbackRef.current : current)
   }, [setActiveIdSynced])
 
   const isConfirmRequired = useCallback(() => {
@@ -363,7 +363,6 @@ export function useChatStore(agents = []) {
     switchConversation,
     sendMessage,
     stopAll,
-    deleteConversation,
     isConfirmRequired,
     confirmDelete,
   }
