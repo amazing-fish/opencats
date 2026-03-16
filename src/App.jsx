@@ -16,6 +16,7 @@ export default function App() {
   const {
     conversations, activeId, messages, sessions,
     createConversation, switchConversation, sendMessage, stopAll,
+    isConfirmRequired, confirmDelete,
   } = useChatStore(agents)
 
   const handleStart = (agentIds) => {
@@ -54,6 +55,9 @@ export default function App() {
         onOpenNewChat={() => setIsModalOpen(true)}
         onSwitch={handleSwitch}
         onOpenCatNest={() => setActivePage(p => p === 'catnest' ? 'chat' : 'catnest')}
+        onDelete={confirmDelete}
+        onConfirmDelete={confirmDelete}
+        isConfirmRequired={isConfirmRequired}
       />
 
       {activePage === 'catnest' ? (

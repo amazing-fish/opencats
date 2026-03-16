@@ -1,8 +1,15 @@
-import { Menu, Search, Edit3, BarChart2, ListTodo, Home, Book, Calendar, Settings, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Menu, Search, Edit3, BarChart2, ListTodo, Home, Book, Calendar, Settings, ChevronDown, Trash2, X, Check } from 'lucide-react'
 import CatIcon from './CatIcon'
 
-export default function Sidebar({ conversations, activeId, onOpenNewChat, onSwitch, onOpenCatNest, activePage, agents = [] }) {
+export default function Sidebar({ conversations, activeId, onOpenNewChat, onSwitch, onOpenCatNest, activePage, agents = [], onDelete, onConfirmDelete, isConfirmRequired }) {
   const agentMap = agents.reduce((acc, a) => { acc[a.id] = a; return acc }, {})
+  const [pendingDeleteId, setPendingDeleteId] = useState(null)
+  useEffect(() => {
+    if (pendingDeleteId && !conversations.find(c => c.id === pendingDeleteId)) {
+      setPendingDeleteId(null)
+    }
+  }, [conversations, pendingDeleteId])
   const navItems = [
     { icon: <Edit3 size={16} />, label: '发起新对话', action: onOpenNewChat },
     { icon: <BarChart2 size={16} />, label: '数据看板' },
@@ -55,22 +62,62 @@ export default function Sidebar({ conversations, activeId, onOpenNewChat, onSwit
           {conversations.map((conv) => (
             <div
               key={conv.id}
-              onClick={() => onSwitch(conv.id)}
-              className={`flex flex-col px-3 py-2 rounded-lg cursor-pointer transition-colors ${conv.id === activeId ? 'bg-[#EAEAEA] text-gray-900' : 'hover:bg-gray-100 text-gray-700'}`}
+              onClick={() => { if (pendingDeleteId !== conv.id) onSwitch(conv.id) }}
+              className={`group relative flex flex-col px-3 py-2 rounded-lg cursor-pointer transition-colors ${conv.id === activeId ? 'bg-[#EAEAEA] text-gray-900' : 'hover:bg-gray-100 text-gray-700'}`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm truncate pr-2 font-medium">{conv.label}</span>
-                <span className="text-xs text-gray-400 shrink-0">
-                  {new Date(conv.createdAt).toLocaleTimeString('zh', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-              <div className="flex mt-1.5 space-x-1">
-                {conv.agents.map((agentType, i) => (
-                  <div key={i} className={`w-4 h-4 rounded-full ${agentMap[agentType]?.avatarColor || 'bg-gray-300'} border border-white flex items-center justify-center`}>
-                    <CatIcon size={10} color="white" />
+              {pendingDeleteId === conv.id ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-500">确认删除？</span>
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={e => { e.stopPropagation(); onConfirmDelete(conv.id); setPendingDeleteId(null) }}
+                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                      aria-label="确认删除"
+                    >
+                      <Check size={13} />
+                    </button>
+                    <button
+                      onClick={e => { e.stopPropagation(); setPendingDeleteId(null) }}
+                      className="p-1 text-gray-400 hover:bg-gray-200 rounded"
+                      aria-label="取消删除"
+                    >
+                      <X size={13} />
+                    </button>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm truncate pr-2 font-medium">{conv.label}</span>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-xs text-gray-400 shrink-0">
+                        {new Date(conv.createdAt).toLocaleTimeString('zh', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation()
+                          if (isConfirmRequired()) {
+                            setPendingDeleteId(conv.id)
+                          } else {
+                            onDelete(conv.id)
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 hover:bg-white/60 rounded transition-opacity"
+                        aria-label={`删除会话 ${conv.label}`}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex mt-1.5 space-x-1">
+                    {conv.agents.map((agentType, i) => (
+                      <div key={i} className={`w-4 h-4 rounded-full ${agentMap[agentType]?.avatarColor || 'bg-gray-300'} border border-white flex items-center justify-center`}>
+                        <CatIcon size={10} color="white" />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
