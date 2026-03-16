@@ -12,13 +12,13 @@ export default function MainChatArea({ messages, sessions, onSend, onStop, agent
   }, [messages])
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white relative min-w-0">
-      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 bg-white z-10">
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-gray-900 relative min-w-0 transition-colors duration-300">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900 z-10">
         <div className="flex items-center space-x-3">
-          <h1 className="text-lg font-semibold text-gray-800">Cat Cafe</h1>
-          <span className="text-sm text-gray-400">AI 猫猫协作空间</span>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Cat Cafe</h1>
+          <span className="text-sm text-gray-400 dark:text-gray-500">AI 猫猫协作空间</span>
         </div>
-        <div className="flex items-center space-x-4 text-gray-400">
+        <div className="flex items-center space-x-4 text-gray-400 dark:text-gray-500">
           {isStreaming && (
             <button
               onClick={onStop}
@@ -28,18 +28,18 @@ export default function MainChatArea({ messages, sessions, onSend, onStop, agent
               <span>停止</span>
             </button>
           )}
-          <div className="flex items-center space-x-3 border-r border-gray-200 pr-4">
-            <FileText size={18} className="cursor-pointer hover:text-gray-600" />
-            <Columns size={18} className="cursor-pointer hover:text-gray-600" />
-            <Download size={18} className="cursor-pointer hover:text-gray-600" />
+          <div className="flex items-center space-x-3 border-r border-gray-200 dark:border-gray-700 pr-4">
+            <FileText size={18} className="cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" />
+            <Columns size={18} className="cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" />
+            <Download size={18} className="cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" />
           </div>
-          <MoreHorizontal size={20} className="cursor-pointer hover:text-gray-600" />
+          <MoreHorizontal size={20} className="cursor-pointer hover:text-gray-600 dark:hover:text-gray-300" />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar pb-36">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-2">
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 space-y-2">
             <span className="text-4xl">🐱</span>
             <p className="text-sm">选择 Agent，开始对话</p>
           </div>
