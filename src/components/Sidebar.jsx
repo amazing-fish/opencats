@@ -1,10 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Menu, Search, Edit3, BarChart2, ListTodo, Home, Book, Calendar, Settings, ChevronDown, Trash2, X, Check } from 'lucide-react'
 import CatIcon from './CatIcon'
 
 export default function Sidebar({ conversations, activeId, onOpenNewChat, onSwitch, onOpenCatNest, activePage, agents = [], onDelete, onConfirmDelete, isConfirmRequired }) {
   const agentMap = agents.reduce((acc, a) => { acc[a.id] = a; return acc }, {})
   const [pendingDeleteId, setPendingDeleteId] = useState(null)
+  useEffect(() => {
+    if (pendingDeleteId && !conversations.find(c => c.id === pendingDeleteId)) {
+      setPendingDeleteId(null)
+    }
+  }, [conversations, pendingDeleteId])
   const navItems = [
     { icon: <Edit3 size={16} />, label: '发起新对话', action: onOpenNewChat },
     { icon: <BarChart2 size={16} />, label: '数据看板' },
@@ -67,12 +72,14 @@ export default function Sidebar({ conversations, activeId, onOpenNewChat, onSwit
                     <button
                       onClick={e => { e.stopPropagation(); onConfirmDelete(conv.id); setPendingDeleteId(null) }}
                       className="p-1 text-red-500 hover:bg-red-50 rounded"
+                      aria-label="确认删除"
                     >
                       <Check size={13} />
                     </button>
                     <button
                       onClick={e => { e.stopPropagation(); setPendingDeleteId(null) }}
                       className="p-1 text-gray-400 hover:bg-gray-200 rounded"
+                      aria-label="取消删除"
                     >
                       <X size={13} />
                     </button>
@@ -96,6 +103,7 @@ export default function Sidebar({ conversations, activeId, onOpenNewChat, onSwit
                           }
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 hover:bg-white/60 rounded transition-opacity"
+                        aria-label={`删除会话 ${conv.label}`}
                       >
                         <Trash2 size={13} />
                       </button>
