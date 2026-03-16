@@ -204,6 +204,36 @@ export function useChatStore(agents = []) {
 
   const abortRefs = useRef({})
 
+  const lastConfirmedAt = useRef(0)
+
+  const deleteConversation = useCallback((convId) => {
+    let fallbackId = null
+    setConversations(prev => {
+      const conv = prev.find(c => c.id === convId)
+      if (conv) {
+        conv.messages.forEach(m => {
+          if (m.streaming && abortRefs.current[m.id]) {
+            abortRefs.current[m.id].abort()
+            delete abortRefs.current[m.id]
+          }
+        })
+      }
+      const next = prev.filter(c => c.id !== convId)
+      fallbackId = next.length > 0 ? next[0].id : null
+      return next
+    })
+    setActiveIdSynced(current => current === convId ? fallbackId : current)
+  }, [setActiveIdSynced])
+
+  const isConfirmRequired = useCallback(() => {
+    return Date.now() - lastConfirmedAt.current >= 120_000
+  }, [])
+
+  const confirmDelete = useCallback((convId) => {
+    lastConfirmedAt.current = Date.now()
+    deleteConversation(convId)
+  }, [deleteConversation])
+
   const sendMessage = useCallback((userText, activeAgents) => {
     const userMsg = {
       id: newId(),
@@ -333,5 +363,8 @@ export function useChatStore(agents = []) {
     switchConversation,
     sendMessage,
     stopAll,
+    deleteConversation,
+    isConfirmRequired,
+    confirmDelete,
   }
 }
