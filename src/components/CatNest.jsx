@@ -152,7 +152,7 @@ export default function CatNest({ agents, onCreate, onUpdate, onDelete }) {
                       onCancel={() => setEditingId(null)}
                     />
                   ) : (
-                    <div className={`${agent.bgColor} border border-gray-100 dark:border-gray-700 rounded-xl p-4 flex items-start justify-between`}>
+                    <div className={`${agent.bgColor} dark:bg-gray-700 border border-gray-100 dark:border-gray-700 rounded-xl p-4 flex items-start justify-between`}>
                       <div className="flex items-start space-x-3">
                         <div className={`w-9 h-9 rounded-full ${agent.avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
                           <CatIcon size={20} color="white" />

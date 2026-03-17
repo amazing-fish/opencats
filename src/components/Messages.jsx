@@ -28,7 +28,7 @@ export function BotMessage({ name, time, avatarColor, content, meta, bgColor, qu
             <p className="text-[13px] text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">{quote.text}</p>
           </div>
         )}
-        <div className={`${bgColor} text-gray-800 dark:text-gray-100 text-[15px] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm w-full leading-relaxed border border-gray-50/50 dark:border-gray-700/50 min-h-[52px] prose prose-sm dark:prose-invert max-w-none`}>
+        <div className={`${bgColor} dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-[15px] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm w-full leading-relaxed border border-gray-50/50 dark:border-gray-700/50 min-h-[52px] prose prose-sm dark:prose-invert max-w-none`}>
           {streaming && !content
             ? <span className="inline-block w-2 h-4 bg-gray-400 animate-pulse rounded" />
             : <div dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
