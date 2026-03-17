@@ -18,17 +18,17 @@ export function BotMessage({ name, time, avatarColor, content, meta, bgColor, qu
       </div>
       <div className="ml-4 flex flex-col items-start w-full min-w-0">
         <div className="flex items-center space-x-2 mb-1.5">
-          <span className="text-sm font-medium text-gray-700">{name}</span>
-          <span className="text-xs text-gray-400">{time}</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{name}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{time}</span>
           {streaming && <span className="text-xs text-green-500 animate-pulse">●</span>}
         </div>
         {quote && (
-          <div className="mb-2 pl-3 border-l-2 border-[#D87C65]/30 bg-[#FFF9F6] py-1.5 px-3 rounded-r-lg w-full max-w-[90%]">
-            <span className="text-[11px] text-gray-500 mb-0.5 block">回复 {quote.author}</span>
-            <p className="text-[13px] text-gray-600 line-clamp-2 leading-relaxed">{quote.text}</p>
+          <div className="mb-2 pl-3 border-l-2 border-[#D87C65]/30 bg-[#FFF9F6] dark:bg-orange-900/20 py-1.5 px-3 rounded-r-lg w-full max-w-[90%]">
+            <span className="text-[11px] text-gray-500 dark:text-gray-400 mb-0.5 block">回复 {quote.author}</span>
+            <p className="text-[13px] text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed">{quote.text}</p>
           </div>
         )}
-        <div className={`${bgColor} text-gray-800 text-[15px] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm w-full leading-relaxed border border-gray-50/50 min-h-[52px] prose prose-sm max-w-none`}>
+        <div className={`${bgColor} text-gray-800 dark:text-gray-100 text-[15px] px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm w-full leading-relaxed border border-gray-50/50 dark:border-gray-700/50 min-h-[52px] prose prose-sm dark:prose-invert max-w-none`}>
           {streaming && !content
             ? <span className="inline-block w-2 h-4 bg-gray-400 animate-pulse rounded" />
             : <div dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
@@ -36,10 +36,10 @@ export function BotMessage({ name, time, avatarColor, content, meta, bgColor, qu
         </div>
         {meta && (
           <div className="flex items-center mt-2 space-x-2">
-            <div className="bg-gray-50 border border-gray-100 text-gray-400 text-xs px-2 py-1 rounded-md">
+            <div className="bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 text-gray-400 dark:text-gray-400 text-xs px-2 py-1 rounded-md">
               {meta}
             </div>
-            <div className="text-xs text-gray-400 hover:bg-gray-100 p-1 rounded cursor-pointer">
+            <div className="text-xs text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 p-1 rounded cursor-pointer">
               <ChevronDown size={14} />
             </div>
           </div>
@@ -54,10 +54,10 @@ export function UserMessage({ name, time, content }) {
     <div className="flex items-start justify-end w-full">
       <div className="mr-4 flex flex-col items-end w-full max-w-3xl">
         <div className="flex items-center space-x-2 mb-1.5">
-          <span className="text-xs text-gray-400">{time}</span>
-          <span className="text-sm font-medium text-gray-700">{name}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{time}</span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{name}</span>
         </div>
-        <div className="bg-[#FDF3EB] text-[#4A3D36] text-[15px] px-5 py-4 rounded-2xl rounded-tr-sm shadow-sm leading-relaxed border border-[#FBE3D1]/50 inline-block text-left whitespace-pre-wrap">
+        <div className="bg-[#FDF3EB] dark:bg-orange-900/30 text-[#4A3D36] dark:text-orange-100 text-[15px] px-5 py-4 rounded-2xl rounded-tr-sm shadow-sm leading-relaxed border border-[#FBE3D1]/50 dark:border-orange-800/30 inline-block text-left whitespace-pre-wrap">
           {content}
         </div>
       </div>
