@@ -58,7 +58,10 @@ export async function* stream({ messages, model, systemPrompt, signal, apiKey, b
   let closed = false
   let terminated = false
 
-  const push = (event) => { queue.push(event); emitter.emit('data') }
+  const push = (event) => {
+    queue.push(event)
+    emitter.emit('data')
+  }
 
   let buffer = ''
   child.stdout.on('data', (chunk) => {
@@ -102,7 +105,6 @@ export async function* stream({ messages, model, systemPrompt, signal, apiKey, b
   child.on('error', (err) => {
     push({ type: 'error', message: err.message })
     closed = true
-    emitter.emit('data')
   })
 
   child.on('close', () => {
@@ -112,8 +114,12 @@ export async function* stream({ messages, model, systemPrompt, signal, apiKey, b
   })
 
   while (true) {
-    if (queue.length > 0) yield queue.shift()
-    else if (closed) break
-    else await new Promise(r => emitter.once('data', r))
+    if (queue.length > 0) {
+      yield queue.shift()
+    } else if (closed) {
+      break
+    } else {
+      await new Promise(resolve => emitter.once('data', resolve))
+    }
   }
 }
