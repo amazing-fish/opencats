@@ -62,6 +62,7 @@ bridge/server.js  (Express :4891)
 |------|------|
 | Node.js 18+ | 前端 + bridge |
 | Redis | WSL 内运行：`wsl redis-server --daemonize yes`，监听 `127.0.0.1:6379` |
+| Claude Code CLI | 内置 Claude agent 必需；安装后执行 `claude login`；或通过 `CLAUDE_EXE_PATH` 指定路径 |
 | codex.exe | 可选，OpenAI Codex CLI，路径由 `CODEX_EXE_PATH` 环境变量指定 |
 
 ### 安装
