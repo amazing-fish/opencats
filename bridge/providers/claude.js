@@ -19,26 +19,24 @@ export function isAvailable() {
 
 export async function* stream({ messages, model, systemPrompt, signal, apiKey, baseUrl }) {
   const lastUserIdx = messages.findLastIndex(m => m.role === 'user')
-  const lastUser = messages[lastUserIdx]
-  if (!lastUser) {
+  if (lastUserIdx === -1) {
     yield { type: 'error', message: '没有用户消息' }
     return
   }
 
-  // 历史拼接（同 codex.js 模式）
-  const history = messages.slice(0, lastUserIdx)
-  const prefix = history.length
-    ? history.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${
-        Array.isArray(m.content)
-          ? m.content.filter(b => b.type === 'text').map(b => b.text).join('')
-          : m.content
-      }`).join('\n') + '\n\nUser: '
+  // 历史拼接：保留完整消息序列（含 lastUser 之后的 assistant turns，支持 @mention 链式触发）
+  const extractText = (content) => Array.isArray(content)
+    ? content.filter(b => b.type === 'text').map(b => b.text).join('')
+    : content
+
+  const prefixMessages = messages.slice(0, -1)
+  const lastMessage = messages[messages.length - 1]
+
+  const prefix = prefixMessages.length
+    ? prefixMessages.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${extractText(m.content)}`).join('\n') + '\n\n'
     : ''
-  const prompt = prefix + (
-    Array.isArray(lastUser.content)
-      ? lastUser.content.filter(b => b.type === 'text').map(b => b.text).join('')
-      : lastUser.content
-  )
+  const finalRole = lastMessage.role === 'user' ? 'User' : 'Assistant'
+  const prompt = prefix + `${finalRole}: ${extractText(lastMessage.content)}`
 
   const args = ['--print', '--output-format', 'stream-json', '--verbose']
   if (model) args.push('--model', model)
@@ -107,8 +105,14 @@ export async function* stream({ messages, model, systemPrompt, signal, apiKey, b
     closed = true
   })
 
-  child.on('close', () => {
-    if (!signal?.aborted && !terminated) push({ type: 'done' })
+  child.on('close', (code) => {
+    if (!signal?.aborted && !terminated) {
+      if (code !== 0) {
+        push({ type: 'error', message: `claude CLI exited with code ${code}` })
+      } else {
+        push({ type: 'done' })
+      }
+    }
     closed = true
     emitter.emit('data')
   })
