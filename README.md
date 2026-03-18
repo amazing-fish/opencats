@@ -82,11 +82,15 @@ cp .env.example .env
 ```env
 VITE_CODEX_BRIDGE_URL=http://localhost:4891
 
+# 可选：指定 claude CLI 路径（默认使用 PATH 中的 claude）
+# CLAUDE_EXE_PATH=C:\path\to\claude.exe
+
 # 可选：指定 codex.exe 路径
 # CODEX_EXE_PATH=C:\path\to\codex.exe
 
-# 可选：内置 Claude agent 默认使用本地 Claude Code CLI 登录态（claude login）
-# 如需为自定义 Claude-compatible agent 指定默认 API Key，可在此设置
+# 旧路由 /claude/stream 专用（已废弃，仅向后兼容保留）
+# 内置 Claude agent 及自定义 Claude-compatible agent 均不读取此变量
+# 自定义 agent 的 apiKey 在 UI 中单独配置，存 Redis，不进 .env
 # CLAUDE_API_KEY=sk-ant-xxxxxxxx
 ```
 
