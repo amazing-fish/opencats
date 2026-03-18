@@ -1,46 +1,129 @@
 /**
- * Claude provider adapter
- * 输入: { messages, model, systemPrompt, apiKey?, baseUrl? }
+ * Claude Code CLI provider adapter
+ * 输入: { messages, model, systemPrompt, signal, apiKey?, baseUrl? }
  * 输出: async generator，yield { type, ... }
+ *
+ * CLI flags: claude --print --output-format stream-json --verbose
+ * per-agent auth via ANTHROPIC_API_KEY / ANTHROPIC_BASE_URL env vars
  */
-import Anthropic from '@anthropic-ai/sdk'
+import { spawn } from 'child_process'
+import { EventEmitter } from 'events'
 
 export const id = 'claudecode'
 
+const CLAUDE_EXE = process.env.CLAUDE_EXE_PATH || 'claude'
+
 export function isAvailable() {
-  return !!process.env.CLAUDE_API_KEY
+  return true // claude CLI assumed on PATH; spawn error handled at runtime
 }
 
-export async function* stream({ messages, model = 'claude-sonnet-4-6', systemPrompt, signal, apiKey, baseUrl }) {
-  const resolvedKey = apiKey || process.env.CLAUDE_API_KEY
-  if (!resolvedKey) {
-    yield { type: 'error', message: 'CLAUDE_API_KEY not set in bridge environment' }
+export async function* stream({ messages, model, systemPrompt, signal, apiKey, baseUrl }) {
+  const lastUserIdx = messages.findLastIndex(m => m.role === 'user')
+  if (lastUserIdx === -1) {
+    yield { type: 'error', message: '没有用户消息' }
     return
   }
 
-  const clientOpts = { apiKey: resolvedKey }
-  if (baseUrl) clientOpts.baseURL = baseUrl
-  const client = new Anthropic(clientOpts)
+  // 历史拼接：保留完整消息序列（含 lastUser 之后的 assistant turns，支持 @mention 链式触发）
+  const extractText = (content) => Array.isArray(content)
+    ? content.filter(b => b.type === 'text').map(b => b.text).join('')
+    : content
 
-  const params = { model, max_tokens: 8096, messages }
-  if (systemPrompt) params.system = systemPrompt
+  const prefixMessages = messages.slice(0, -1)
+  const lastMessage = messages[messages.length - 1]
 
-  const anthropicStream = client.messages.stream(params)
+  const prefix = prefixMessages.length
+    ? prefixMessages.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${extractText(m.content)}`).join('\n') + '\n\n'
+    : ''
+  const finalRole = lastMessage.role === 'user' ? 'User' : 'Assistant'
+  const prompt = prefix + `${finalRole}: ${extractText(lastMessage.content)}`
 
-  signal?.addEventListener('abort', () => anthropicStream.abort())
+  const args = ['--print', '--output-format', 'stream-json', '--verbose']
+  if (model) args.push('--model', model)
+  if (systemPrompt) args.push('--system-prompt', systemPrompt)
+  args.push(prompt)
 
-  try {
-    for await (const event of anthropicStream) {
-      if (signal?.aborted) break
-      if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
-        yield { type: 'chunk', text: event.delta.text }
-      }
-      if (event.type === 'message_delta' && event.usage) {
-        yield { type: 'usage', usage: event.usage }
+  // per-agent 环境变量注入
+  const env = { ...process.env }
+  if (apiKey)  env.ANTHROPIC_API_KEY  = apiKey
+  if (baseUrl) env.ANTHROPIC_BASE_URL = baseUrl
+
+  const child = spawn(CLAUDE_EXE, args, { env })
+  signal?.addEventListener('abort', () => { if (!child.killed) child.kill() })
+
+  const emitter = new EventEmitter()
+  const queue = []
+  let closed = false
+  let terminated = false
+
+  const push = (event) => {
+    queue.push(event)
+    emitter.emit('data')
+  }
+
+  let buffer = ''
+  child.stdout.on('data', (chunk) => {
+    buffer += chunk.toString()
+    const lines = buffer.split('\n')
+    buffer = lines.pop()
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (!trimmed) continue
+      try {
+        const json = JSON.parse(trimmed)
+
+        // text chunks from assistant turns
+        if (json.type === 'assistant' && json.message?.content) {
+          for (const block of json.message.content) {
+            if (block.type === 'text' && block.text) {
+              push({ type: 'chunk', text: block.text })
+            }
+            // tool_use blocks: ignored, CLI handles execution internally
+          }
+        }
+
+        // terminal event
+        if (json.type === 'result') {
+          terminated = true
+          if (json.is_error) {
+            push({ type: 'error', message: json.result })
+          } else {
+            if (json.usage) push({ type: 'usage', usage: json.usage })
+            push({ type: 'done' })
+          }
+        }
+
+        // type: "user" (tool_result feedback) and type: "system": ignored
+      } catch { /* 忽略非 JSON 行 */ }
+    }
+  })
+
+  child.stderr.on('data', (chunk) => console.error('[claude stderr]', chunk.toString()))
+
+  child.on('error', (err) => {
+    push({ type: 'error', message: err.message })
+    closed = true
+  })
+
+  child.on('close', (code) => {
+    if (!signal?.aborted && !terminated) {
+      if (code !== 0) {
+        push({ type: 'error', message: `claude CLI exited with code ${code}` })
+      } else {
+        push({ type: 'done' })
       }
     }
-    if (!signal?.aborted) yield { type: 'done' }
-  } catch (err) {
-    if (!signal?.aborted) yield { type: 'error', message: err.message, status: err.status ?? err.statusCode }
+    closed = true
+    emitter.emit('data')
+  })
+
+  while (true) {
+    if (queue.length > 0) {
+      yield queue.shift()
+    } else if (closed) {
+      break
+    } else {
+      await new Promise(resolve => emitter.once('data', resolve))
+    }
   }
 }
