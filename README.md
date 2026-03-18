@@ -6,7 +6,7 @@
 
 ## 一句话定位
 
-把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，Claude-compatible backend 支持为每个自定义 Agent 配置独立的 baseUrl / apiKey；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
+把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，Claude 内置 agent 通过本地 Claude Code CLI 运行；Claude-compatible backend 支持为每个自定义 Agent 配置独立的 baseUrl / apiKey；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
 
 ---
 
@@ -19,7 +19,7 @@
 | 多 Agent 并发对话 | 同一条消息同时发给多个 AI，并排流式展示回复 |
 | @mention 路由 | AI 回复中 `@name` 自动触发目标 Agent 响应，支持链式协作 |
 | 会话持久化 | Redis 存储全量会话，刷新不丢失，UUID 防冲突 |
-| 自定义 Agent | 可配置模型 ID、System Prompt；Claude provider 额外支持 baseUrl / apiKey（仅存 bridge Redis，不回传前端）；Codex provider 通过本地 CLI 调用，不支持自定义凭据 |
+| 自定义 Agent | 可配置模型 ID、System Prompt；Claude provider 额外支持 baseUrl / apiKey（仅存 bridge Redis，不回传前端），留空则使用本地 Claude Code CLI 登录态；Codex provider 通过本地 CLI 调用，不支持自定义凭据 |
 | 流式输出 + 停止 | 实时显示 token，支持随时中断所有 Agent |
 | Token 统计 | 每条回复显示 input/output token 用量 |
 | Bridge 中转 | 前端不直连 AI API，全部经由本地 Express bridge |
@@ -43,8 +43,8 @@ bridge/server.js  (Express :4891)
   cat-cafe:conversations    ↕              ↕
   cat-cafe:agents    providers/claude.js  providers/codex.js
                           ↕                    ↕
-                    Anthropic API          codex.exe (本地)
-                    /v1/messages
+                    Claude Code CLI        codex.exe (本地)
+                    (本地子进程)
 ```
 
 - 前端唯一状态源：`useChatStore` + `useAgentStore`（无 Zustand/Redux）
@@ -80,13 +80,14 @@ cp .env.example .env
 编辑 `.env`：
 
 ```env
-# Bridge 侧 Claude API Key（只在 bridge/server.js 中读取，不进前端 bundle）
-CLAUDE_API_KEY=sk-ant-xxxxxxxx
-
 VITE_CODEX_BRIDGE_URL=http://localhost:4891
 
 # 可选：指定 codex.exe 路径
 # CODEX_EXE_PATH=C:\path\to\codex.exe
+
+# 可选：内置 Claude agent 默认使用本地 Claude Code CLI 登录态（claude login）
+# 如需为自定义 Claude-compatible agent 指定默认 API Key，可在此设置
+# CLAUDE_API_KEY=sk-ant-xxxxxxxx
 ```
 
 ### 启动
@@ -103,10 +104,10 @@ npm run dev
 
 | Agent | 模型 | Provider |
 |-------|------|----------|
-| 布偶猫 | claude-sonnet-4-6 | Anthropic API |
+| 布偶猫 | claude-sonnet-4-6 | Claude Code CLI（本地） |
 | 缅因猫 | gpt-5.4 | Codex CLI（本地） |
 
-在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。Claude-compatible provider 额外支持 Base URL（可选）和 API Key（可选），API Key 仅存 bridge Redis，不回传前端，留空则使用 bridge `.env` 中的默认 Key；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
+在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。Claude-compatible provider 额外支持 Base URL（可选）和 API Key（可选），API Key 仅存 bridge Redis，不回传前端，留空则使用本地 Claude Code CLI 登录态；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
 
 ---
 
@@ -140,7 +141,7 @@ bridge/
   gateway.js             # Provider 路由，SSE 输出
   policy.js              # 超时 / 重试 / 限流 / 日志
   providers/
-    claude.js            # Anthropic API 适配器
+    claude.js            # Claude Code CLI 适配器（本地子进程）
     codex.js             # Codex CLI 适配器
 ```
 
@@ -151,7 +152,7 @@ bridge/
 - 前端：Vite + React 18 + Tailwind CSS + marked + DOMPurify
 - Bridge：Node.js + Express + ioredis
 - 存储：Redis（会话 + Agent 配置）
-- AI：Anthropic API（SSE）/ OpenAI Codex CLI（子进程 + JSON 流）
+- AI：Claude Code CLI（本地子进程 + JSON 流）/ OpenAI Codex CLI（子进程 + JSON 流）
 
 ---
 
