@@ -16,17 +16,17 @@ export default function NewChatModal({ onClose, onStart, agents = [] }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-2xl w-[560px] max-h-[80vh] flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-800">新建对话</h2>
-          <X size={20} className="text-gray-400 cursor-pointer hover:text-gray-700" onClick={onClose} />
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-[560px] max-h-[80vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">新建对话</h2>
+          <X size={20} className="text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200" onClick={onClose} />
         </div>
 
         <div className="p-6 overflow-y-auto space-y-6">
           {/* 参与者配置 */}
           <div>
-            <div className="text-sm font-medium text-gray-700 mb-3">
-              参与者配置 <span className="text-xs text-gray-400 font-normal">多选时将创建协作空间</span>
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              参与者配置 <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">多选时将创建协作空间</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {agents.map(agent => (
@@ -35,8 +35,8 @@ export default function NewChatModal({ onClose, onStart, agents = [] }) {
                   onClick={() => toggleAgent(agent.id)}
                   className={`px-3 py-1.5 rounded-lg border text-sm cursor-pointer transition-colors ${
                     selectedIds.includes(agent.id)
-                      ? 'border-[#D87C65] bg-[#FDF3EB] text-[#D87C65] font-medium'
-                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      ? 'border-[#D87C65] bg-[#FDF3EB] dark:bg-[#3a2218] text-[#D87C65] font-medium'
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   {agent.name}
@@ -46,10 +46,10 @@ export default function NewChatModal({ onClose, onStart, agents = [] }) {
           </div>
 
           {/* 连续对话 */}
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
             <div>
-              <div className="text-sm font-medium text-gray-800">连续对话</div>
-              <div className="text-xs text-gray-500 mt-0.5">将注入最近的 Session Chain 作为上下文</div>
+              <div className="text-sm font-medium text-gray-800 dark:text-gray-100">连续对话</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">将注入最近的 Session Chain 作为上下文</div>
             </div>
             <ToggleRight
               size={32}
@@ -65,7 +65,7 @@ export default function NewChatModal({ onClose, onStart, agents = [] }) {
               <input
                 type="text"
                 placeholder="搜索场景或框架..."
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#D87C65]"
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#D87C65]"
               />
             </div>
             <div className="space-y-1">
@@ -74,11 +74,11 @@ export default function NewChatModal({ onClose, onStart, agents = [] }) {
                 { icon: <Folder size={18} className="text-yellow-500 mt-0.5" />, name: 'cat-cafe', path: '/workspace/prompt/ui-cat-cafe' },
                 { icon: <Users size={18} className="text-purple-500 mt-0.5" />, name: '大厅 (沉浸式)', path: '默认协作空间' },
               ].map((item, i) => (
-                <div key={i} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer border border-transparent hover:border-gray-100">
+                <div key={i} className="flex items-start space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-700">
                   {item.icon}
                   <div>
-                    <div className="text-sm font-medium text-gray-800">{item.name}</div>
-                    <div className="text-xs text-gray-400 font-mono mt-0.5">{item.path}</div>
+                    <div className="text-sm font-medium text-gray-800 dark:text-gray-100">{item.name}</div>
+                    <div className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">{item.path}</div>
                   </div>
                 </div>
               ))}
@@ -86,8 +86,8 @@ export default function NewChatModal({ onClose, onStart, agents = [] }) {
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
-          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-200 bg-white border border-gray-200 rounded-lg transition-colors">
+        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex justify-end space-x-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors">
             取消
           </button>
           <button
