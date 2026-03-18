@@ -49,6 +49,7 @@ export async function* stream({ messages, model, systemPrompt, signal, apiKey, b
   if (baseUrl) env.ANTHROPIC_BASE_URL = baseUrl
 
   const child = spawn(CLAUDE_EXE, args, { env })
+  child.stdin.end() // CLI reads prompt from args; close stdin immediately to unblock pipe mode
   signal?.addEventListener('abort', () => { if (!child.killed) child.kill() })
 
   const emitter = new EventEmitter()
