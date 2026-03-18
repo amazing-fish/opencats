@@ -74,26 +74,29 @@ cd bridge && npm install && cd ..
 
 ### 配置
 
+`.env` 仅供 Vite 前端读取（`VITE_*` 变量）。bridge 侧变量需通过 shell 环境变量传入（`export` 或在启动命令前设置）。
+
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env`：
+`.env`（Vite 前端变量）：
 
 ```env
 VITE_CODEX_BRIDGE_URL=http://localhost:4891
-
-# 可选：指定 claude CLI 路径（默认使用 PATH 中的 claude）
-# CLAUDE_EXE_PATH=C:\path\to\claude.exe
-
-# 可选：指定 codex.exe 路径
-# CODEX_EXE_PATH=C:\path\to\codex.exe
-
-# 旧路由 /claude/stream 专用（已废弃，仅向后兼容保留）
-# 内置 Claude agent 及自定义 Claude-compatible agent 均不读取此变量
-# 自定义 agent 的 apiKey 在 UI 中单独配置，存 Redis，不进 .env
-# CLAUDE_API_KEY=sk-ant-xxxxxxxx
 ```
+
+bridge 侧 shell 环境变量（可选）：
+
+```bash
+# Claude CLI 路径（默认使用 PATH 中的 claude）
+export CLAUDE_EXE_PATH=C:\path\to\claude.exe
+
+# Codex CLI 路径
+export CODEX_EXE_PATH=C:\path\to\codex.exe
+```
+
+内置 Claude agent 默认使用本地 `claude login` 登录态，无需额外配置。自定义 agent 的 apiKey 在 UI 中单独配置，存 Redis，不经过环境变量。
 
 ### 启动
 
