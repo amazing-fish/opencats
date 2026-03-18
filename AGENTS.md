@@ -125,6 +125,21 @@ Every PR must contain:
 - Risks
 - Validation steps
 - Linked issue(s)
+- **Docs impact** (required): one of:
+  - `Docs impact: none`
+  - `Docs impact: README.md`
+  - `Docs impact: CLAUDE.md`
+  - `Docs impact: AGENTS.md`
+  - `Docs impact: follow-up issue #<id>` (with explicit rationale for deferral)
+
+If a PR changes any of the following, docs must be reviewed explicitly before merge:
+- architecture shape
+- runtime backend
+- auth model
+- setup / onboarding path
+- built-in provider behavior
+
+If docs/tests are intentionally deferred, the PR must link a specific follow-up issue and state why deferral is acceptable.
 
 Preferred PR size:
 - keep focused
@@ -251,6 +266,15 @@ Minimum expectation:
 - run lint / typecheck if configured
 - include exact validation commands in the PR description
 
+**Built-in agent smoke validation (required for provider/runtime changes):**
+
+When a PR touches any of: provider adapter, bridge runtime, streaming logic, auth model, CLI wiring — the validation bar must include a local smoke check for built-in agents before requesting review:
+
+- built-in Claude agent: send a simple `hello` request, verify a non-empty response is returned
+- built-in Codex agent: send a simple `hello` request, verify a non-empty response is returned
+
+Include the smoke check result (pass/fail + observed output) in the PR validation section.
+
 For async stream / generator subsystems, explicitly trace all exit paths before patching:
 - normal completion
 - timeout
@@ -306,5 +330,39 @@ A PR is ready to merge only if:
 - risks are documented
 - no unresolved scope ambiguity remains
 - for stream/async subsystems: all exit paths (normal, timeout, yielded error, thrown error, client abort) have been explicitly verified
+- **docs impact field is present and addressed** — if docs were deferred, a follow-up issue must be linked
+- **for provider/runtime/auth/setup changes: built-in agent smoke check passed** and result is documented in PR
 
 Correct and small beats clever and sprawling.
+
+---
+
+## 15. Review conclusion protocol
+
+Reviewer findings must be posted as PR review comments or inline comments on GitHub — not only summarized in chat.
+
+After completing a review pass:
+- if blocking findings remain: publish an explicit **Request changes** review on the PR
+- if no blocking findings remain: publish an explicit **Approve** review on the PR
+- resolving threads alone does not replace a final review conclusion
+
+After re-review:
+- reviewer must update the PR with the current verdict (approve or request changes)
+- do not leave the final state implicit
+
+---
+
+## 16. Collaborator close-out flow
+
+When the reviewer is also acting as collaborator and a PR is approved and mergeable:
+
+1. Review findings are posted to the PR
+2. Author addresses feedback and requests re-review
+3. Reviewer re-checks and publishes the final review conclusion on the PR
+4. Collaborator performs close-out:
+   - approve the PR on GitHub
+   - merge using the repository's normal merge style
+   - verify linked issue closure behavior (auto-close via `Closes #N` in PR body)
+   - manually close linked issues if auto-close does not trigger
+   - sync local `master`: `git checkout master && git pull origin master`
+   - clean up temporary branches: delete remote fix branch after merge, delete local branch
