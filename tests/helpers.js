@@ -68,9 +68,17 @@ export function startBridge() {
  * @param {number} timeoutMs
  * @returns {Promise<{ chunks: string[], events: object[] }>}
  */
-export async function streamGateway(bridge, { provider, message }, timeoutMs = 65_000) {
+export async function streamGateway(bridge, { provider, message, model, systemPrompt, agentId }, timeoutMs = 65_000) {
   const ac = new AbortController()
   const timer = setTimeout(() => ac.abort(), timeoutMs)
+
+  const body = {
+    provider,
+    messages: [{ role: 'user', content: message }],
+  }
+  if (model) body.model = model
+  if (systemPrompt) body.systemPrompt = systemPrompt
+  if (agentId) body.agentId = agentId
 
   const res = await fetch(`${bridge.baseUrl}/gateway/stream`, {
     method: 'POST',
@@ -78,10 +86,7 @@ export async function streamGateway(bridge, { provider, message }, timeoutMs = 6
       'Content-Type': 'application/json',
       'x-local-token': bridge.token,
     },
-    body: JSON.stringify({
-      provider,
-      messages: [{ role: 'user', content: message }],
-    }),
+    body: JSON.stringify(body),
     signal: ac.signal,
   })
 

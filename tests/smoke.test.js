@@ -17,6 +17,8 @@ describe('built-in agent smoke test', () => {
     const { chunks, events } = await streamGateway(bridge, {
       provider: 'claudecode',
       message: 'hello',
+      model: 'claude-sonnet-4-6',
+      agentId: 'claude',
     })
 
     const doneEvent = events.find(e => e.type === 'done')
@@ -32,6 +34,8 @@ describe('built-in agent smoke test', () => {
     const { chunks, events } = await streamGateway(bridge, {
       provider: 'codex',
       message: 'hello',
+      model: 'gpt-5.4',
+      agentId: 'codex',
     })
 
     const errorEvent = events.find(e => e.type === 'error')
