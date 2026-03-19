@@ -297,7 +297,7 @@ When debugging intertwined failure modes in one subsystem:
 ## 12. Forbidden behavior
 
 Do not:
-- commit directly to `main`
+- commit directly to `master`
 - rewrite unrelated files
 - silently rename core concepts
 - change public interfaces without documenting it
@@ -331,7 +331,7 @@ A PR is ready to merge only if:
 - no unresolved scope ambiguity remains
 - for stream/async subsystems: all exit paths (normal, timeout, yielded error, thrown error, client abort) have been explicitly verified
 - **docs impact field is present and addressed** — if docs were deferred, a follow-up issue must be linked
-- **for provider/runtime/auth/setup changes: built-in agent smoke check passed** and result is documented in PR
+- **for provider/runtime/auth/setup/streaming/CLI changes: built-in agent smoke check passed** and result is documented in PR
 
 Correct and small beats clever and sprawling.
 
@@ -354,7 +354,7 @@ After re-review:
 
 ## 16. Collaborator close-out flow
 
-When the reviewer is also acting as collaborator and a PR is approved and mergeable:
+This flow applies only when the human maintainer has explicitly delegated close-out authority (e.g. "go ahead and merge"). Section 3 remains the default: the human maintainer is the final decision-maker for merge. When delegated, the expected flow is:
 
 1. Review findings are posted to the PR
 2. Author addresses feedback and requests re-review
