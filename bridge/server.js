@@ -95,12 +95,19 @@ app.put('/agents', requireLocalToken, async (req, res) => {
     if (existing) {
       for (const a of JSON.parse(existing)) existingMap[a.id] = a
     }
-    const merged = incoming.map(a => ({
-      ...a,
-      apiKey: a.authType === 'cli-login' ? undefined : (a.apiKey ?? existingMap[a.id]?.apiKey),
-      baseUrl: a.baseUrl ?? existingMap[a.id]?.baseUrl,
-      authType: a.authType ?? existingMap[a.id]?.authType,
-    }))
+    const merged = incoming.map(a => {
+      const prev = existingMap[a.id]
+      const authTypeChanged = prev && a.authType && a.authType !== prev.authType
+      return {
+        ...a,
+        // cli-login: 清除凭据；authType 变更: 仅用显式提供的新凭据；未变更: 继承旧值
+        apiKey: a.authType === 'cli-login' ? undefined
+              : authTypeChanged ? (a.apiKey || undefined)
+              : (a.apiKey ?? prev?.apiKey),
+        baseUrl: a.baseUrl ?? prev?.baseUrl,
+        authType: a.authType ?? prev?.authType,
+      }
+    })
     await redis.set(AGENTS_KEY, JSON.stringify(merged))
     res.json({ ok: true })
   } catch (err) {
