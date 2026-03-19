@@ -31,6 +31,12 @@ describe('built-in agent smoke test', () => {
   })
 
   it('Codex agent (codex) returns non-empty response to hello', async (t) => {
+    // 显式跳过：仅当 SMOKE_SKIP_CODEX=1 时允许跳过，避免 suite 静默降级
+    if (process.env.SMOKE_SKIP_CODEX === '1') {
+      t.skip('SMOKE_SKIP_CODEX=1: explicitly skipped by user')
+      return
+    }
+
     const { chunks, events } = await streamGateway(bridge, {
       provider: 'codex',
       message: 'hello',
@@ -40,10 +46,12 @@ describe('built-in agent smoke test', () => {
 
     const errorEvent = events.find(e => e.type === 'error')
 
-    // codex.exe 是可选依赖，不可用时跳过而非失败
+    // codex.exe 不可用时 fail 并给出清晰的前置条件提示
     if (errorEvent?.message?.includes('not found')) {
-      t.skip('codex.exe not available')
-      return
+      assert.fail(
+        'Codex CLI not available. Install codex and set CODEX_EXE_PATH, ' +
+        'or set SMOKE_SKIP_CODEX=1 to explicitly skip this case.'
+      )
     }
 
     const doneEvent = events.find(e => e.type === 'done')
