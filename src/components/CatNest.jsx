@@ -5,7 +5,7 @@ import CatIcon from './CatIcon'
 
 function AgentForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial || {
-    name: '', provider: 'claudecode', modelId: '', systemPrompt: '', baseUrl: '', apiKey: '',
+    name: '', provider: 'claudecode', modelId: '', systemPrompt: '', baseUrl: '', apiKey: '', authType: 'cli-login',
   })
   const [error, setError] = useState('')
   const set = (k, v) => { setError(''); setForm(f => ({ ...f, [k]: v })) }
@@ -41,6 +41,20 @@ function AgentForm({ initial, onSave, onCancel }) {
             ))}
           </select>
         </div>
+        {form.provider === 'claudecode' && (
+          <div>
+            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">认证方式</label>
+            <select
+              value={form.authType || 'cli-login'}
+              onChange={e => set('authType', e.target.value)}
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D87C65] bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+            >
+              <option value="cli-login">CLI 登录态（默认）</option>
+              <option value="api-key">Anthropic API Key</option>
+              <option value="bearer-token">Bearer Token（OpenAI 兼容）</option>
+            </select>
+          </div>
+        )}
         <div>
           <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Model ID</label>
           <input
@@ -59,16 +73,21 @@ function AgentForm({ initial, onSave, onCancel }) {
             className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D87C65] bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
           />
         </div>
-        <div className="col-span-2">
-          <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">API Key <span className="text-gray-300 dark:text-gray-600">（可选，留空使用 bridge 默认）</span></label>
-          <input
-            type="password"
-            value={form.apiKey}
-            onChange={e => set('apiKey', e.target.value)}
-            placeholder="sk-..."
-            className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D87C65] bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
-          />
-        </div>
+        {(form.provider !== 'claudecode' || form.authType !== 'cli-login') && (
+          <div className="col-span-2">
+            <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
+              {form.authType === 'bearer-token' ? 'Auth Token' : 'API Key'}
+              {' '}<span className="text-gray-300 dark:text-gray-600">（可选，留空使用 bridge 默认）</span>
+            </label>
+            <input
+              type="password"
+              value={form.apiKey}
+              onChange={e => set('apiKey', e.target.value)}
+              placeholder={form.authType === 'bearer-token' ? 'Bearer token...' : 'sk-...'}
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D87C65] bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+            />
+          </div>
+        )}
         <div className="col-span-2">
           <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">System Prompt</label>
           <textarea

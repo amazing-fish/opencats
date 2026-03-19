@@ -6,7 +6,7 @@
 
 ## 一句话定位
 
-把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，Claude 内置 agent 通过本地 Claude Code CLI 运行；Claude-compatible backend 支持为每个自定义 Agent 配置独立的 baseUrl / apiKey；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
+把多个智能体像小型研发团队一样协作落到工程现实：**可视化协作、@mention 路由、会话持久化、可在浏览器中一键启动**。当前内置 Claude 和 Codex 两个 provider，Claude 内置 agent 通过本地 Claude Code CLI 运行；自定义 Claude agent 支持三种认证方式（CLI 登录态 / Anthropic API Key / Bearer Token）和可选 Base URL；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
 
 ---
 
@@ -19,7 +19,7 @@
 | 多 Agent 并发对话 | 同一条消息同时发给多个 AI，并排流式展示回复 |
 | @mention 路由 | AI 回复中 `@name` 自动触发目标 Agent 响应，支持链式协作 |
 | 会话持久化 | Redis 存储全量会话，刷新不丢失，UUID 防冲突 |
-| 自定义 Agent | 可配置模型 ID、System Prompt；Claude provider 额外支持 baseUrl / apiKey（仅存 bridge Redis，不回传前端），留空则使用本地 Claude Code CLI 登录态；Codex provider 通过本地 CLI 调用，不支持自定义凭据 |
+| 自定义 Agent | 可配置模型 ID、System Prompt；Claude provider 额外支持认证方式选择（CLI 登录态 / API Key / Bearer Token）和 Base URL，凭据仅存 bridge Redis，不回传前端；Codex provider 通过本地 CLI 调用，不支持自定义凭据 |
 | 流式输出 + 停止 | 实时显示 token，支持随时中断所有 Agent |
 | Token 统计 | 每条回复显示 input/output token 用量 |
 | Bridge 中转 | 前端不直连 AI API，全部经由本地 Express bridge |
@@ -96,7 +96,7 @@ export CLAUDE_EXE_PATH=C:\path\to\claude.exe
 export CODEX_EXE_PATH=C:\path\to\codex.exe
 ```
 
-内置 Claude agent 默认使用本地 `claude login` 登录态，无需额外配置。自定义 agent 的 apiKey 在 UI 中单独配置，存 Redis，不经过环境变量。
+内置 Claude agent 默认使用本地 `claude login` 登录态，无需额外配置。自定义 agent 的凭据（API Key 或 Bearer Token）在 UI 中单独配置，存 Redis，不经过环境变量。
 
 ### 启动
 
@@ -115,7 +115,15 @@ npm run dev
 | 布偶猫 | claude-sonnet-4-6 | Claude Code CLI（本地） |
 | 缅因猫 | gpt-5.4 | Codex CLI（本地） |
 
-在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。Claude-compatible provider 额外支持 Base URL（可选）和 API Key（可选），API Key 仅存 bridge Redis，不回传前端，留空则使用本地 Claude Code CLI 登录态；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
+在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。Claude Code provider 额外支持认证方式选择和 Base URL（可选）：
+
+| 认证方式 | 说明 | CLI 环境变量 |
+|---------|------|-------------|
+| CLI 登录态（默认） | 使用本地 `claude login` 凭据 | 无需配置 |
+| Anthropic API Key | 直连 Anthropic API 或兼容网关 | `ANTHROPIC_API_KEY` |
+| Bearer Token | 使用 `Authorization: Bearer` header 认证（适用于需要 bearer auth 的网关） | `ANTHROPIC_AUTH_TOKEN` |
+
+凭据仅存 bridge Redis，不回传前端。Codex provider 通过本地 CLI 调用，不支持自定义凭据。
 
 ---
 

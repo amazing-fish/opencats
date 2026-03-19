@@ -27,7 +27,7 @@ export function registerGateway(app, requireLocalToken, redis, agentsKey) {
         const data = await redis.get(agentsKey)
         const agents = data ? JSON.parse(data) : []
         const agent = agents.find(a => a.id === agentId)
-        if (agent) agentConfig = { apiKey: agent.apiKey, baseUrl: agent.baseUrl }
+        if (agent) agentConfig = { apiKey: agent.apiKey, baseUrl: agent.baseUrl, authType: agent.authType }
       } catch {
         // 查询失败时 fallback 到默认配置
       }

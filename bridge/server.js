@@ -74,7 +74,10 @@ app.get('/agents', requireLocalToken, async (req, res) => {
   try {
     const data = await redis.get(AGENTS_KEY)
     const agents = data ? JSON.parse(data) : []
-    const safe = agents.map(({ apiKey, baseUrl, ...rest }) => rest)
+    const safe = agents.map(({ apiKey, baseUrl, ...rest }) => ({
+      ...rest,
+      authType: rest.authType || (apiKey ? 'api-key' : 'cli-login'),
+    }))
     res.json(safe)
   } catch (err) {
     console.error('[redis] get agents error:', err.message)
@@ -92,11 +95,20 @@ app.put('/agents', requireLocalToken, async (req, res) => {
     if (existing) {
       for (const a of JSON.parse(existing)) existingMap[a.id] = a
     }
-    const merged = incoming.map(a => ({
-      ...a,
-      apiKey: a.apiKey ?? existingMap[a.id]?.apiKey,
-      baseUrl: a.baseUrl ?? existingMap[a.id]?.baseUrl,
-    }))
+    const merged = incoming.map(a => {
+      const prev = existingMap[a.id]
+      const prevDerivedAuthType = prev?.authType || (prev?.apiKey ? 'api-key' : 'cli-login')
+      const authTypeChanged = prev && a.authType && a.authType !== prevDerivedAuthType
+      return {
+        ...a,
+        // cli-login: 清除凭据；authType 真实变更: 仅用显式提供的新凭据；未变更/legacy 归一化: 继承旧值
+        apiKey: a.authType === 'cli-login' ? undefined
+              : authTypeChanged ? (a.apiKey || undefined)
+              : (a.apiKey ?? prev?.apiKey),
+        baseUrl: a.baseUrl ?? prev?.baseUrl,
+        authType: a.authType ?? prev?.authType,
+      }
+    })
     await redis.set(AGENTS_KEY, JSON.stringify(merged))
     res.json({ ok: true })
   } catch (err) {
