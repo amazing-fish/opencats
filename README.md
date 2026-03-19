@@ -115,7 +115,15 @@ npm run dev
 | 布偶猫 | claude-sonnet-4-6 | Claude Code CLI（本地） |
 | 缅因猫 | gpt-5.4 | Codex CLI（本地） |
 
-在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。Claude-compatible provider 额外支持 Base URL（可选）和 API Key（可选），API Key 仅存 bridge Redis，不回传前端，留空则使用本地 Claude Code CLI 登录态；Codex provider 通过本地 CLI 调用，不支持自定义凭据。
+在右侧边栏可添加、编辑、删除 Agent，配置项包括：模型 ID、System Prompt。Claude Code provider 额外支持认证方式选择和 Base URL（可选）：
+
+| 认证方式 | 说明 | CLI 环境变量 |
+|---------|------|-------------|
+| CLI 登录态（默认） | 使用本地 `claude login` 凭据 | 无需配置 |
+| Anthropic API Key | 直连 Anthropic API 或兼容网关 | `ANTHROPIC_API_KEY` |
+| Bearer Token | OpenAI 兼容后端 | `ANTHROPIC_AUTH_TOKEN` |
+
+凭据仅存 bridge Redis，不回传前端。Codex provider 通过本地 CLI 调用，不支持自定义凭据。
 
 ---
 

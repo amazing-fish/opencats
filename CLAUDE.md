@@ -54,6 +54,7 @@
 | #33 | claude provider 实现与本地 agent 架构不符 | ✅ 已修复（CLI 后端替换） |
 | #36 | Claude CLI provider stdin 未关闭导致所有请求 timeout | ✅ 已修复（child.stdin.end()） |
 | #37 | 内置 agent e2e smoke test | ✅ 已修复（node:test + gateway SSE 验证） |
+| #43 | claudecode 自定义 agent auth 仅支持 Anthropic apiKey | ✅ 已修复（authType 枚举 + bearer-token 支持） |
 | #16 | @mention 链式调用无循环保护 | 🔴 待修复 |
 
 ## 演进路径
@@ -69,6 +70,7 @@
   @mention token 不泄漏进 provider prompt ✓
   Claude provider 替换为本地 Claude Code CLI 后端 ✓
   内置 agent e2e smoke test ✓
+  自定义 agent auth model 扩展（bearer-token 支持）✓
 
 下一步
   @mention 链式调用循环保护（issue #16）
