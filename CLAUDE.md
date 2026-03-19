@@ -21,7 +21,7 @@
 
 ## 不可漂移的红线
 
-1. **API Key 永远不进前端 bundle** — Claude/OpenAI key 只在 bridge `process.env` 或 Redis（per-agent apiKey）中读取；`GET /agents` 永远 strip `apiKey` 字段，不回传前端
+1. **API Key 永远不进前端 bundle** — Claude/OpenAI key 只在 bridge `process.env` 或 Redis（per-agent 凭据）中读取；`GET /agents` 永远 strip 凭据字段，不回传前端
 2. **会话 ID 永远用 `crypto.randomUUID()`** — 禁止自增整数，刷新后会冲突
 3. **Redis 写入必须防抖** — 不在 streaming chunk 期间逐次写，至少 500ms 防抖或仅在 `onDone`/`stopAll` 时写
 4. **bridge 是唯一外部通信出口** — 前端只 fetch `localhost:4891`
@@ -31,7 +31,7 @@
 | 依赖 | 说明 |
 |------|------|
 | Redis | WSL 内运行，`wsl redis-server --daemonize yes`，监听 `127.0.0.1:6379` |
-| Claude Code CLI | `claude` 命令需在 PATH，或通过 `CLAUDE_EXE_PATH` 环境变量指定；默认使用本地登录态（`claude login`），per-agent 可通过 Redis 中的 `apiKey`/`baseUrl` 覆盖 |
+| Claude Code CLI | `claude` 命令需在 PATH，或通过 `CLAUDE_EXE_PATH` 环境变量指定；默认使用本地登录态（`claude login`），per-agent 可通过 Redis 中的 `authType` 选择认证方式（API Key / Bearer Token / CLI 登录态） |
 | codex.exe | 路径由 `CODEX_EXE_PATH` 环境变量指定 |
 | `.env` | 复制 `.env.example`；内置 Claude agent 默认走本地 CLI 登录态，无需 `CLAUDE_API_KEY` |
 
@@ -65,7 +65,7 @@
   统一 provider gateway ✓
   gateway policy 层（timeout / retry / concurrency / logging）✓
   bridge auth 加固（loopback bind ✓、数据路由 token 鉴权 ✓）
-  per-agent 自定义后端连接（baseUrl / apiKey，仅 Claude-compatible provider）✓
+  per-agent 自定义后端连接（authType 认证方式选择 + baseUrl，Claude provider）✓
   bridge 不可用错误提示 + 重试 ✓
   @mention token 不泄漏进 provider prompt ✓
   Claude provider 替换为本地 Claude Code CLI 后端 ✓

@@ -5,18 +5,19 @@
  */
 import { spawn } from 'child_process'
 
-const BRIDGE_PORT = 14891 // 用非默认端口避免与开发环境冲突
-const BRIDGE_URL = `http://127.0.0.1:${BRIDGE_PORT}`
+const DEFAULT_BRIDGE_PORT = 14891 // 用非默认端口避免与开发环境冲突
 const STARTUP_TIMEOUT = 10_000
 
 /**
  * 启动 bridge 子进程，等待 ready 输出
+ * @param {number} [port=14891] - bridge 监听端口（不同 test 文件用不同端口避免 EADDRINUSE）
  * @returns {{ baseUrl: string, token: string, kill: () => void }}
  */
-export function startBridge() {
+export function startBridge(port = DEFAULT_BRIDGE_PORT) {
+  const bridgeUrl = `http://127.0.0.1:${port}`
   return new Promise((resolve, reject) => {
     const child = spawn('node', ['bridge/server.js'], {
-      env: { ...process.env, BRIDGE_PORT: String(BRIDGE_PORT) },
+      env: { ...process.env, BRIDGE_PORT: String(port) },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
@@ -31,10 +32,10 @@ export function startBridge() {
       if (stdout.includes('listening on')) {
         clearTimeout(timer)
         // 获取 token
-        fetch(`${BRIDGE_URL}/token`)
+        fetch(`${bridgeUrl}/token`)
           .then(r => r.json())
           .then(({ token }) => resolve({
-            baseUrl: BRIDGE_URL,
+            baseUrl: bridgeUrl,
             token,
             kill: () => child.kill(),
           }))

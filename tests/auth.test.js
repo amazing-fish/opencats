@@ -6,7 +6,7 @@ describe('authType merge / redaction / migration', () => {
   let bridge
 
   before(async () => {
-    bridge = await startBridge()
+    bridge = await startBridge(14892)
   })
 
   after(() => {
