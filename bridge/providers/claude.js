@@ -4,7 +4,7 @@
  * 输出: async generator，yield { type, ... }
  *
  * CLI flags: claude --print --output-format stream-json --verbose
- * per-agent auth via ANTHROPIC_API_KEY / ANTHROPIC_BASE_URL env vars
+ * per-agent auth via ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL env vars
  */
 import { spawn } from 'child_process'
 import { EventEmitter } from 'events'
@@ -17,7 +17,7 @@ export function isAvailable() {
   return true // claude CLI assumed on PATH; spawn error handled at runtime
 }
 
-export async function* stream({ messages, model, systemPrompt, signal, apiKey, baseUrl }) {
+export async function* stream({ messages, model, systemPrompt, signal, apiKey, baseUrl, authType }) {
   const lastUserIdx = messages.findLastIndex(m => m.role === 'user')
   if (lastUserIdx === -1) {
     yield { type: 'error', message: '没有用户消息' }
@@ -43,10 +43,16 @@ export async function* stream({ messages, model, systemPrompt, signal, apiKey, b
   if (systemPrompt) args.push('--system-prompt', systemPrompt)
   args.push(prompt)
 
-  // per-agent 环境变量注入
+  // per-agent auth 环境变量注入
   const env = { ...process.env }
-  if (apiKey)  env.ANTHROPIC_API_KEY  = apiKey
   if (baseUrl) env.ANTHROPIC_BASE_URL = baseUrl
+  if (apiKey) {
+    if (authType === 'bearer-token') {
+      env.ANTHROPIC_AUTH_TOKEN = apiKey
+    } else {
+      env.ANTHROPIC_API_KEY = apiKey
+    }
+  }
 
   const child = spawn(CLAUDE_EXE, args, { env })
   child.stdin.end() // CLI reads prompt from args; close stdin immediately to unblock pipe mode
