@@ -96,6 +96,7 @@ app.put('/agents', requireLocalToken, async (req, res) => {
       ...a,
       apiKey: a.apiKey ?? existingMap[a.id]?.apiKey,
       baseUrl: a.baseUrl ?? existingMap[a.id]?.baseUrl,
+      authType: a.authType ?? existingMap[a.id]?.authType,
     }))
     await redis.set(AGENTS_KEY, JSON.stringify(merged))
     res.json({ ok: true })
