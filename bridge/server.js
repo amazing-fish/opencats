@@ -97,10 +97,11 @@ app.put('/agents', requireLocalToken, async (req, res) => {
     }
     const merged = incoming.map(a => {
       const prev = existingMap[a.id]
-      const authTypeChanged = prev && a.authType && a.authType !== prev.authType
+      const prevDerivedAuthType = prev?.authType || (prev?.apiKey ? 'api-key' : 'cli-login')
+      const authTypeChanged = prev && a.authType && a.authType !== prevDerivedAuthType
       return {
         ...a,
-        // cli-login: 清除凭据；authType 变更: 仅用显式提供的新凭据；未变更: 继承旧值
+        // cli-login: 清除凭据；authType 真实变更: 仅用显式提供的新凭据；未变更/legacy 归一化: 继承旧值
         apiKey: a.authType === 'cli-login' ? undefined
               : authTypeChanged ? (a.apiKey || undefined)
               : (a.apiKey ?? prev?.apiKey),
