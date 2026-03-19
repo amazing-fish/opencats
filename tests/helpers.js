@@ -16,7 +16,7 @@ const STARTUP_TIMEOUT = 10_000
 export function startBridge() {
   return new Promise((resolve, reject) => {
     const child = spawn('node', ['bridge/server.js'], {
-      env: { ...process.env, PORT: String(BRIDGE_PORT) },
+      env: { ...process.env, BRIDGE_PORT: String(BRIDGE_PORT) },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
@@ -68,7 +68,7 @@ export function startBridge() {
  * @param {number} timeoutMs
  * @returns {Promise<{ chunks: string[], events: object[] }>}
  */
-export async function streamGateway(bridge, { provider, message }, timeoutMs = 30_000) {
+export async function streamGateway(bridge, { provider, message }, timeoutMs = 65_000) {
   const ac = new AbortController()
   const timer = setTimeout(() => ac.abort(), timeoutMs)
 

@@ -252,7 +252,7 @@ app.post('/codex/stream', requireLocalToken, (req, res) => {
 registerGateway(app, requireLocalToken, redis, AGENTS_KEY)
 
 // 同时绑定 IPv4 和 IPv6 loopback，避免 localhost 在 IPv6-first 环境解析到 ::1 时连接失败
-const PORT = Number(process.env.PORT) || 4891
+const PORT = Number(process.env.BRIDGE_PORT) || 4891
 app.listen(PORT, '127.0.0.1', () => {
   console.log(`[bridge] listening on http://127.0.0.1:${PORT}`)
 })

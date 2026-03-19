@@ -28,14 +28,21 @@ describe('built-in agent smoke test', () => {
     assert.ok(chunks.join('').trim().length > 0, 'Expected non-empty response text')
   })
 
-  it('Codex agent (codex) returns non-empty response to hello', async () => {
+  it('Codex agent (codex) returns non-empty response to hello', async (t) => {
     const { chunks, events } = await streamGateway(bridge, {
       provider: 'codex',
       message: 'hello',
     })
 
-    const doneEvent = events.find(e => e.type === 'done')
     const errorEvent = events.find(e => e.type === 'error')
+
+    // codex.exe 是可选依赖，不可用时跳过而非失败
+    if (errorEvent?.message?.includes('not found')) {
+      t.skip('codex.exe not available')
+      return
+    }
+
+    const doneEvent = events.find(e => e.type === 'done')
 
     assert.ok(!errorEvent, `Expected no error, got: ${errorEvent?.message}`)
     assert.ok(doneEvent, 'Expected a done event')
