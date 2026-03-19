@@ -43,8 +43,10 @@ export async function* stream({ messages, model, systemPrompt, signal, apiKey, b
   if (systemPrompt) args.push('--system-prompt', systemPrompt)
   args.push(prompt)
 
-  // per-agent auth 环境变量注入
+  // per-agent auth 环境变量注入（先清除继承的全局凭据，再按 authType 设置）
   const env = { ...process.env }
+  delete env.ANTHROPIC_API_KEY
+  delete env.ANTHROPIC_AUTH_TOKEN
   if (baseUrl) env.ANTHROPIC_BASE_URL = baseUrl
   if (apiKey) {
     if (authType === 'bearer-token') {

@@ -121,7 +121,7 @@ npm run dev
 |---------|------|-------------|
 | CLI 登录态（默认） | 使用本地 `claude login` 凭据 | 无需配置 |
 | Anthropic API Key | 直连 Anthropic API 或兼容网关 | `ANTHROPIC_API_KEY` |
-| Bearer Token | OpenAI 兼容后端 | `ANTHROPIC_AUTH_TOKEN` |
+| Bearer Token | 使用 `Authorization: Bearer` header 认证（适用于需要 bearer auth 的网关） | `ANTHROPIC_AUTH_TOKEN` |
 
 凭据仅存 bridge Redis，不回传前端。Codex provider 通过本地 CLI 调用，不支持自定义凭据。
 

@@ -74,7 +74,10 @@ app.get('/agents', requireLocalToken, async (req, res) => {
   try {
     const data = await redis.get(AGENTS_KEY)
     const agents = data ? JSON.parse(data) : []
-    const safe = agents.map(({ apiKey, baseUrl, ...rest }) => rest)
+    const safe = agents.map(({ apiKey, baseUrl, ...rest }) => ({
+      ...rest,
+      authType: rest.authType || (apiKey ? 'api-key' : 'cli-login'),
+    }))
     res.json(safe)
   } catch (err) {
     console.error('[redis] get agents error:', err.message)
@@ -94,7 +97,7 @@ app.put('/agents', requireLocalToken, async (req, res) => {
     }
     const merged = incoming.map(a => ({
       ...a,
-      apiKey: a.apiKey ?? existingMap[a.id]?.apiKey,
+      apiKey: a.authType === 'cli-login' ? undefined : (a.apiKey ?? existingMap[a.id]?.apiKey),
       baseUrl: a.baseUrl ?? existingMap[a.id]?.baseUrl,
       authType: a.authType ?? existingMap[a.id]?.authType,
     }))
