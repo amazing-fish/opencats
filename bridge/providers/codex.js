@@ -80,8 +80,14 @@ export async function* stream({ messages, model, signal }) {
     emitter.emit('data')
   })
 
-  child.on('close', () => {
-    if (!signal?.aborted) push({ type: 'done' })
+  child.on('close', (code) => {
+    if (!signal?.aborted) {
+      if (code === 0) {
+        push({ type: 'done' })
+      } else {
+        push({ type: 'error', message: `codex CLI exited with code ${code}` })
+      }
+    }
     closed = true
     emitter.emit('data')
   })

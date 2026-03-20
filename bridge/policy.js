@@ -1,7 +1,6 @@
 /**
  * Gateway Policy Layer
  * 为所有 provider adapter 提供统一的：
- * - 请求超时
  * - retry / backoff（仅幂等场景）
  * - 并发限流
  * - 结构化日志
@@ -11,7 +10,6 @@
 // ── 配置 ──────────────────────────────────────────────────────────────────────
 
 const POLICY = {
-  timeoutMs: Number(process.env.GATEWAY_TIMEOUT_MS) || 60_000,
   maxRetries: Number(process.env.GATEWAY_MAX_RETRIES) || 2,
   retryBaseMs: Number(process.env.GATEWAY_RETRY_BASE_MS) || 500,
   maxConcurrency: Number(process.env.GATEWAY_MAX_CONCURRENCY) || 10,
@@ -49,17 +47,6 @@ function isRetryable(err) {
 // ── sleep ─────────────────────────────────────────────────────────────────────
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
-
-// ── 合并多个 AbortSignal ──────────────────────────────────────────────────────
-
-function anyAbort(...signals) {
-  const ac = new AbortController()
-  for (const s of signals) {
-    if (s.aborted) { ac.abort(); break }
-    s.addEventListener('abort', () => ac.abort(), { once: true })
-  }
-  return ac.signal
-}
 
 // ── 核心：withPolicy ──────────────────────────────────────────────────────────
 
@@ -99,19 +86,13 @@ export async function* withPolicy(provider, streamFn, params) {
         return
       }
 
-      const timeoutAc = new AbortController()
-      const timer = setTimeout(() => timeoutAc.abort(), POLICY.timeoutMs)
-      const signal = params.signal
-        ? anyAbort(params.signal, timeoutAc.signal)
-        : timeoutAc.signal
-
       let usage = null
       let chunks = 0
       let yieldedError = null  // adapter 以 event 形式 yield 的错误
-      let timedOut = false
+      let sawDone = false
 
       try {
-        for await (const event of streamFn({ ...params, signal })) {
+        for await (const event of streamFn({ ...params, signal: params.signal })) {
           if (event.type === 'chunk') chunks++
           if (event.type === 'usage') usage = event.usage
 
@@ -122,28 +103,16 @@ export async function* withPolicy(provider, streamFn, params) {
           }
 
           yield event
-          if (event.type === 'done') break
+          if (event.type === 'done') {
+            sawDone = true
+            break
+          }
         }
-      } finally {
-        clearTimeout(timer)
-        // 超时：timeoutAc 已 abort 但客户端未 abort
-        if (timeoutAc.signal.aborted && !params.signal?.aborted) {
-          timedOut = true
-        }
-      }
+      } finally {}
 
       // 客户端主动断开
       if (params.signal?.aborted) {
         log('info', provider, 'request aborted by client', { durationMs: Date.now() - startTs })
-        return
-      }
-
-      // 超时
-      if (timedOut) {
-        log('warn', provider, 'request timeout', { timeoutMs: POLICY.timeoutMs, attempt })
-        lastErr = Object.assign(new Error(`Request timed out after ${POLICY.timeoutMs}ms`), { _timeout: true })
-        // 超时不重试（流式请求不幂等）
-        yield { type: 'error', message: lastErr.message }
         return
       }
 
@@ -155,6 +124,13 @@ export async function* withPolicy(provider, streamFn, params) {
           attempt++
           continue
         }
+        log('error', provider, 'request failed', { error: lastErr.message, attempts: attempt + 1, chunks })
+        yield { type: 'error', message: lastErr.message }
+        return
+      }
+
+      if (!sawDone) {
+        lastErr = new Error('Stream terminated without explicit done event')
         log('error', provider, 'request failed', { error: lastErr.message, attempts: attempt + 1, chunks })
         yield { type: 'error', message: lastErr.message }
         return
