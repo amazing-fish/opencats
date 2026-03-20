@@ -81,8 +81,10 @@ export function streamProvider({ provider, messages, model, systemPrompt, agentI
       let fullText = ''
       let usage = null
       let buffer = ''
+      let sawDone = false
+      let stopReading = false
 
-      while (true) {
+      while (!stopReading) {
         const { done, value } = await reader.read()
         if (done) break
 
@@ -101,13 +103,18 @@ export function streamProvider({ provider, messages, model, systemPrompt, agentI
             }
             if (json.type === 'usage') usage = json.usage
             if (json.type === 'error') throw new Error(json.message)
-            if (json.type === 'done') break
+            if (json.type === 'done') {
+              sawDone = true
+              stopReading = true
+              break
+            }
           } catch (e) {
             if (e.message !== 'Unexpected end of JSON input') throw e
           }
         }
       }
 
+      if (!sawDone) throw new Error('Stream terminated without explicit done event')
       onDone?.(fullText, usage)
     } catch (err) {
       if (err.name !== 'AbortError') onError?.(err)

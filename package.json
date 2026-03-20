@@ -7,6 +7,7 @@
     "dev": "concurrently --kill-others-on-fail -n bridge,vite -c cyan,green \"node bridge/server.js\" \"vite\"",
     "build": "vite build",
     "preview": "vite preview",
+    "test:stream": "node --test tests/policy.test.js tests/codex-provider.test.js tests/gatewayAgent.test.js",
     "test:smoke": "node --test tests/smoke.test.js",
     "test:auth": "node --test tests/auth.test.js",
     "test": "node --test tests/smoke.test.js tests/auth.test.js"
