@@ -53,3 +53,36 @@ it('emits an explicit error when a provider stream closes without a done event',
     { type: 'error', message: 'Stream terminated without explicit done event' },
   ])
 })
+
+it('forwards the client abort signal to the provider and exits cleanly on abort', async () => {
+  const { withPolicy } = await importFresh('./bridge/policy.js')
+  const ac = new AbortController()
+  const events = []
+
+  let sawSameSignal = false
+  let providerSawAbort = false
+  let releaseAbort
+  const waitForAbort = new Promise(resolve => { releaseAbort = resolve })
+
+  async function* abortAwareStream({ signal }) {
+    sawSameSignal = signal === ac.signal
+    signal?.addEventListener('abort', () => {
+      providerSawAbort = true
+      releaseAbort()
+    }, { once: true })
+
+    yield { type: 'chunk', text: 'partial' }
+    await waitForAbort
+  }
+
+  for await (const event of withPolicy('demo', abortAwareStream, { model: 'demo-model', signal: ac.signal })) {
+    events.push(event)
+    if (event.type === 'chunk') ac.abort()
+  }
+
+  assert.equal(sawSameSignal, true)
+  assert.equal(providerSawAbort, true)
+  assert.deepEqual(events, [
+    { type: 'chunk', text: 'partial' },
+  ])
+})
