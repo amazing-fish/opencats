@@ -92,7 +92,7 @@ export async function* withPolicy(provider, streamFn, params) {
       let sawDone = false
 
       try {
-        for await (const event of streamFn(params)) {
+        for await (const event of streamFn({ ...params, signal: params.signal })) {
           if (event.type === 'chunk') chunks++
           if (event.type === 'usage') usage = event.usage
 
